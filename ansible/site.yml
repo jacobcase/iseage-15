@@ -1,0 +1,4 @@
+---
+# file: site.yml
+# sets up the entire system
+- include: firewall.yml

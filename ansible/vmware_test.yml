@@ -1,0 +1,11 @@
+---
+- hosts: localhost
+  tasks:
+  - vsphere_guest:
+      vcenter_hostname: vcenter.ksucdc.org
+      username: Administrator@vsphere.local
+      password: #MahB0y!!
+      guest: firewall
+      from_template: yes
+      template_src: "ubuntu14.04_template"
+      cluster: cluster 
