@@ -1,11 +1,13 @@
 ---
 - hosts: localhost
   tasks:
-  - vsphere_guest:
-      vcenter_hostname: vcenter.ksucdc.org
-      username: Administrator@vsphere.local
-      password: #MahB0y!!
+  - name: deplay firewall vm
+    vsphere_guest:
+      vcenter_hostname: 172.22.0.20
+      username: Administrator@VSPHERE.LOCAL
+      password: "#MahB0y!!"
       guest: firewall
       from_template: yes
       template_src: "ubuntu14.04_template"
-      cluster: cluster 
+      cluster: main
+#     resource_pool: "main/primary"
