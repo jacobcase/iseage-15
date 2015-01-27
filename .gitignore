@@ -2,3 +2,5 @@
 banking/bin
 banking/lib
 banking/include
+*.pyc
+__pycache__/

@@ -1,0 +1,32 @@
+<html>
+    <style type="text/css">
+        table, td, th { border: 1px solid black; }
+    </style>
+    <body bgcolor=grey>
+        <center>
+            <h1>
+                {{ USER_NAME }}'s Account
+            </h1>
+            <h3>Balance: {{ BALANCE }}</h3>
+            <h2>Transaction History</h2>
+            <table>
+                <tr>
+                    <th>Transaction</th>
+                    <th>Debit</th>
+                    <th>Credit</th>
+                    <th>Balance</th>
+
+                </tr>
+                {% for row in rows %}
+                <tr>
+                    {% for cell in row %}
+                    <td>{{ cell }}</td>
+                </tr>
+            </table>
+            <a href="/cgi-bin/show/landing">Back</a>
+        </center>
+        <hr/>
+        <iframe src="/bottom2.html" scrolling=no frameborder=none width=100%>
+        </iframe>
+    </body>
+</html>
