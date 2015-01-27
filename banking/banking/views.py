@@ -1,6 +1,9 @@
 from banking import app
 import os.path
 
+@app.route('/')
+def index():
+    return app.send_static_file('index.html')
 
 @app.route('/cgi-bin/actions/create-user')
 def create_user():
@@ -35,7 +38,7 @@ def make_payment():
     pass
 
 @app.route('/cgi-bin/actions/make-withdrawal')
-def make_payment():
+def make_withdrawal():
     pass
 
 @app.route('/cgi-bin/show/landing')
