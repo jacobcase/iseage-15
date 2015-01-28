@@ -1,0 +1,63 @@
+#!/bin/bash
+
+WEB="{{ router_iface_external[0] }}"
+AD="{{ router_iface_external[1] }}"
+RDP="{{ router_iface_external[2] }}"
+EWEB="{{ external_ip[0] }}"
+ERDP="{{ external_ip[1]}}"
+EAD="{{ external_ip[2] }}"
+IWEB="{{ internal_ip[0] }}"
+IAD="{{ internal_ip[1] }}"
+IRDP="{{ internal_ip[2] }}"
+
+####### REMOVE RULE LATER
+iptables -A INPUT -p tcp --dport 22 -j ACCEPT
+
+# Flush
+iptables -F
+iptables -t nat -F
+
+# Firewall
+iptables -A INPUT -i lo -p all -j ACCEPT
+iptables -A OUTPUT -o lo -p all -j ACCEPT
+iptables -A INPUT -i $WEB -j ACCEPT
+iptables -A INPUT -i $AD -j ACCEPT
+iptables -A INPUT -i $RDP -j ACCEPT
+iptables -A IPNUT -p all -s localhost -i eth0 -j DROP
+
+# DOS Attacks mitigation
+iptables -p tcp --syn --dport 80 -m connlimit --connlimit-above 16 -j REJECT
+iptables -A INPUT -p tcp --dport -m state --state NEW -m limit --limit 50/minute -j ACCEPT
+iptables -A INPUT -m quota --quota 1073741824 -j ACCEPT
+
+# Prevent brute-force attacks
+iptables -A INPUT -p tcp --dport 22 -m state --state NEW -m recent --set
+iptables -A INPUT -p tcp --dport 22 -m state --state NEW -m recent --update --seconds 60 --hitcount 4 -j DROP
+
+# prevent port scan
+iptables -A INPUT -p tcp -m state --state NEW -m state --state NEW -m recent --set
+iptables -A INPUT -p tcp -m state --state NEW -m recent --update --seconds 30 --hitcount 10 -j DROP
+iptables -A FORWARD -p tcp -m state --state NEW -m recent --set
+iptables -A FORWARD -p tcp -m state --state NEW -m recent --update --seconds 30 --hitcount 10 -j DROP
+
+iptables -A INPUT -p icmp -j ACCEPT
+iptables -A INPUT -p tcp -i $WEB --dport 80 -j ACCEPT
+iptables -A INPUT -p tcp -i $WEB --dport 22 -j ACCEPT
+iptables -A INPUT -p tcp -i $AD --dport 53 -j ACCEPT 
+iptables -A INPUT -p tcp -i $RDP --dport 3389 -j ACCEPT 
+iptables -A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
+iptables -A INPUT -j REJECT
+
+# Routing
+iptables -A FORWARD -i $WEB -j ACCEPT
+iptables -A FORWARD -i $AD -j ACCEPT
+iptables -A FORWARD -i $RDP -j ACCEPT
+
+#iptables -t nat -A PREROUTING -i $WEB -p tcp --dport 80 -j DNAT --to $IWEBIP:80
+#iptables -t nat -A POSTROUTING -s $IWEBIP -j SNAT --to-destination $EWEBIP
+
+#iptables -t nat -A PREROUTING -d $EAD -j DNAT --to-destination $IAD
+#iptables -t nat -A POSTROUTING -s $IAD -j SNAT --to-destination $EAD
+
+#iptables -t nat -A PREROUTING -d $ERDP -j DNAT --to-destination $IRDP
+#iptables -t nat -A POSTROUTING -s $IRDP -j SNAT --to-destination $ERDP
