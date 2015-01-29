@@ -1,0 +1,14 @@
+vars:
+    router_iface_internal: eth1
+    router_iface_external: 
+        - eth0:0
+        - eth0:1
+        - eth0:2
+    external_ip:
+        - 172.22.20.150
+        - 172.22.20.160
+        - 172.22.20.170
+    internal_ip:
+        - 192.168.1.150
+        - 192.168.1.160
+        - 192.168.1.170

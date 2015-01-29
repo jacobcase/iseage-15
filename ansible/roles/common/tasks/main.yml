@@ -1,0 +1,9 @@
+- apt: update-cache=yes
+
+- apt: upgrade-dist
+
+- name: install common packages
+  apt: pkg={{item}} state=installed
+  with_items:
+    - htop
+    - ntp

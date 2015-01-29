@@ -1,0 +1,12 @@
+- name: install conntrack
+  apt: pkg=conntrack state=present
+
+- name: enable ip forwarding
+  sysctl: name=net.ipv4.ip_forward value=1
+
+- name: configure iptables
+  template: src=iptables.j2 dest=/etc/network/if-pre-up.d/iptables mode=0755
+  notify:
+    - reload iptables
+  tags:
+    - iptables
