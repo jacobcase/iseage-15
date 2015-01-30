@@ -1,4 +1,4 @@
-from flask import render_template, request, session, url_for, redirect, session, make_response
+from flask import render_template, request, session, url_for, redirect, session, make_response, set_cookie
 from itsdangerous import TimestampSigner, SignatureExpired
 from banking import app
 from banking.db import DB, User
@@ -51,7 +51,7 @@ def create_user():
     DB.session.commit()
 
     res = make_response(redirect(url_for('show_user', user_name=user)))
-    res.headers['Content-Type'] = 'text/plain'
+    res.headers['Content-type'] = 'text/plain'
     res.data = "New user " + name + " created!\n"
     return res 
 
@@ -76,13 +76,14 @@ def find_user():
     if not valid_admin():
         return forbidden()
 
+    # TODO: validate
     search_user = request.args.get("user_name")
     result = User.query.filter_by(username=search_user).first()
     if not result:
         return (app.send_static_file('user-not-found.html'), 404)
 
     res = make_response(str(result.balance))
-    res.headers['Content-Type'] = 'text/plain'
+    res.headers['Content-type'] = 'text/plain'
     return res
 
 
@@ -91,31 +92,71 @@ def get_access_token():
     password = request.args.get('password')
     user = request.args.get('user_name')
     db_user = User.query.filter_by(username=user).first()
-    if not db_user or not db_user.verify_pass(password):
-        # TODO: C app prints "Wrong!\n" here with redirect
-        return redirect(url_for('landing'))
+    if not db_user:
+        res = make_response("User not into existing\n")
+        res.headers['Content-type'] = 'text/plain'
+        return res
+
+    if not db_user.verify_pass(password):
+        res = make_response(redirect(url_for('landing')))
+        res.data = "Wrong!\n"
+        res.headers['Content-type'] = 'text/plain'
+        return res
+
     session['access_token'] = s.sign(user)
-    return redirect(url_for('landing'))
+    res = make_response(redirect(url_for('landing')))
+    res.data = "access_token=" + session['access_token']
+    res.headers['Content-type'] = 'text/plain'
+    return res
 
 @app.route('/cgi-bin/actions/get-admin-access-token')
 def get_admin_token():
     password = request.args.get('password')
     user = "ADMINISTRATOR"
     db_user = User.query.filter_by(username=user).first()
+    if not db_user:
+        res = make_request("User not into existing\n")
+        res.headers['Content-type'] = 'text/plain'
+        return res
     if not db_user.verify_pass(password):
-        return redirect(url_for('landing'))
+        res = make_request("Wrong!\n")
+        res.headers['Content-type'] = 'text/plain'
+        return res
 
     session['access_token'] = s.sign(user)
+    res = make_response("access_token=" + session['access_token'])
+    res.headers['Content-type'] = 'text/plain'
+    return res
 
 @app.route('/cgi-bin/actions/logout')
 def logout():
-    # remove users cookie, delete their session from the database
-    # all that security stuff
+    res = make_response()
     return redirect(url_for("landing"))
 
 @app.route('/cgi-bin/actions/make-deposit')
 def make_deposit():
-    pass
+    if not valid_admin():
+        return forbidden()
+     
+    search_user = request.args.get("user_name")
+    DBuser = User.query.filter_by(username=search_user).first()
+    if not DBuser:
+        res = make_response("User " + search_user + " does not exist!\n", 404)
+        res.headers['Content-type'] = 'text/plain'
+        return res
+    amount = request.args.get('amount')
+    try:
+        amount = int(amount)
+    except Exception:
+        pass
+
+    new_balance = DBuser.balance + amount
+    trans = Transaction(DBuser.id, Transaction.DEPOSIT, amount, new_balance)
+    DB.session.add(trans)
+    DB.session.commit()
+    res = make_response(redirect("show_user"))
+
+
 
 @app.route('/cgi-bin/actions/make-payment')
 def make_payment():
