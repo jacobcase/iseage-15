@@ -3,12 +3,12 @@ Vagrant.configure("2") do |config|
   config.vm.box_url = 'https://vagrantcloud.com/ssx/boxes/vsphere-dummy/versions/0.0.1/providers/vsphere.box'
 
   config.vm.provider :vsphere do |vsphere|
-    vsphere.host = '172.22.0.20'
-    vsphere.compute_resource_name = 'esxi-ksucdc.org'
+    vsphere.host = '172.22.0.10'
+    vsphere.compute_resource_name = 'esxi-1.ksucdc.org'
     vsphere.resource_pool_name = 'primary'
-    vsphere.template_name = 'ubuntu14.04_template'
+    vsphere.template_name = 'templates/ubuntu14.04_template'
     vsphere.name = 'test-vagrant'
-    vsphere.user = 'Administrator@vsphere.local'
-    vsphere.password = ''
+    vsphere.user = 'root'
+    vsphere.insecure = true
   end
 end
