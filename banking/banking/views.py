@@ -28,6 +28,20 @@ def valid_session():
         return False, redirect(url_for('landing'))
     s.validate(token)
 
+def allowed_access(name):
+    if valid_admin():
+        return True
+
+    token = session.get('access_token')
+    if not token:
+        return False
+
+    token_name = s.unsign(token)
+    if token_name != name:
+        return False
+
+    return True
+
 def refresh_session():
     token = session.get('access_token')
     user = s.unsign(token)
@@ -164,32 +178,63 @@ def make_payment():
 
 @app.route('/cgi-bin/actions/make-withdrawal')
 def make_withdrawal():
-    pass
+    if not session_admin():
+        return forbidden()
+    user = request.args.get("user_name")
+
+    DBuser = User.query.filter_by(username=user).first()
+    if not DBuser:
+        res = make_response(("User " + user + " does not exist", 404))
+        res.headers['Content-type'] = 'text/plain'
+        return res
+    amount = request.args.get('amount')
+    last_trans = Transaction.query.filter_by(user_id=DBuser.id).order_by(desc(Transaction.date)).last()
+    new_amount = last_trans.balance - amount
+    new_trans = Transaction(DBuser.id, 
+
 
 @app.route('/cgi-bin/show/landing')
 def landing():
-    user = "cdc" # replace
-    #check the auth
-    authenticated = True
-    if not authenticated:
-        return render_template("not-logged-in.html")
+    user = get_session_user()
+    if not user:
+        return render_template("not-logged-in.html")    
     else:
         return render_template("welcome.html", USER_NAME=user)
 
 
 @app.route('/cgi-bin/show/show-user')
 def show_user():
-    if not valid_session():
+    user = get_session_user()
+    if not user:
         return forbidden()
 
-    balance = "100"
-    tansactions = []
-    authenticated = True
+    req_user = request.args.get("user_name")
+    if not req_user:
+        return forbidden()
 
-    if not authenticated:
-        return ("Status: 403\nForbidden!", 403)
+    if not session_admin() and user != req_user:
+        return forbidden()
+
     
-    if not user:
-        return render_template("user-not-found.html")
+    DBuser = User.query.filter_by(username=req_user).first()
+    if not DBuser:
+        return (render_template("user-not-found.html"), 404)
 
-    return render_template("user.html", USER_NAME=user, BALANCE=balance)
+    transaction_array = []
+    transactions = Transaction.query.filter_by(user_id = DBuser.id).order_by(desc(Transaction.date)).all()
+    for transaction in transactions:
+        tmp = []
+        tmp.append(transaction.transaction)
+        if transaction.trans_type == Transaction.DEBIT:
+            tmp.append(transaction.amount)
+            tmp.append(None)
+        else:
+            tmp.append(None)
+            tmp.append(transaction.amount)
+
+        tmp.append(transaction.balance)
+        transaction_array.append(tmp)
+
+    balance = transaction_array[len(transaction_array) - 1][3] 
+
+    return render_template("user.html", USER_NAME=req_user, BALANCE=balance, TABLE=transaction_array)
