@@ -1,6 +1,9 @@
 - name: install python2.7
   apt: pkg=python2.7 state=present
 
+- name: install libnetfilter-log1
+  apt: pkg=libnetfilter-log1 state=present
+
 - name: install libzmq1
   apt: pkg=libzmq1 state=present
 
