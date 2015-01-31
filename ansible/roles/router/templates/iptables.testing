@@ -45,11 +45,11 @@ iptables -A INPUT -p icmp -m limit --limit 2/second --limit-burst 2 -j ACCEPT
 iptables -A OUTPUT -j ACCEPT
 
 # Forward port on each interface
-iptables -A INPUT -p tcp -i $EWEB --dport 80 -j ACCEPT
-iptables -A INPUT -p tcp -i $EWEB --dport 443 -j ACCEPT
-iptables -A INPUT -p tcp -i $EWEB --dport 22 -j ACCEPT
-iptables -A INPUT -p tcp -i $EAD --dport 53 -j ACCEPT 
-iptables -A INPUT -p tcp -i $ERDP --dport 3389 -j ACCEPT
+iptables -A INPUT -p tcp -i $WEB --dport 80 -j ACCEPT
+iptables -A INPUT -p tcp -i $WEB --dport 443 -j ACCEPT
+iptables -A INPUT -p tcp -i $WEB --dport 22 -j ACCEPT
+iptables -A INPUT -p tcp -i $AD --dport 53 -j ACCEPT 
+iptables -A INPUT -p tcp -i $RDP --dport 3389 -j ACCEPT
 
 # Reject all ports
 iptables -A INPUT -j REJECT
