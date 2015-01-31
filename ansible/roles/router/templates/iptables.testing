@@ -98,15 +98,8 @@ iptables -A FORWARD -i $RDP -j ACCEPT
 
 iptables -t nat -A PREROUTING -i $WEB -d $EWEB -p tcp --dport 80 -j DNAT --to-destination $IWEBIP:80
 iptables -t nat -A PREROUTING -i $WEB -d $EWEB -p tcp --dport 443 -j DNAT --to-destination $IWEBIP:443
-#iptables -t nat -A POSTROUTING -o $IWEBIP -p tcp --sports 80 -j SNAT --to $EWEBIP:80
-#iptables -t nat -A POSTROUTING -s $IWEBIP -p tcp --sport 80 -j SNAT --to-destination $EWEBIP:80
-#iptables -t nat -A POSTROUTING -o $WEB -j MASQUERADE
+iptables -t nat -A POSTROUTING -s $IWEBIP -p tcp --sport 80 -j SNAT --to $EWEBIP:80
 
-#iptables -t nat -A PREROUTING -d $EAD tcp --dport 53 -j DNAT --to-destination $IAD:53
-#iptables -t nat -A POSTROUTING -s $IAD -j SNAT --to-destination $EAD
-
-#iptables -t nat -A PREROUTING -d $ERDP --dport 3389 -j DNAT --to-destination $IRDP:3389
-#iptables -t nat -A POSTROUTING -s $IRDP -j SNAT --to-destination $ERDP
 
 # Nflog sending packets to IDS rules; needs nflog installed first
 iptables -I INPUT -i $WEB -j NFLOG --nflog-group 0 --nflog-range 65535
