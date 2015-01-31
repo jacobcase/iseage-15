@@ -1,3 +1,6 @@
+- name: install python2.7
+  apt: pkg=python2.7 state=present
+
 - name: install conntrack
   apt: pkg=conntrack state=present
 
