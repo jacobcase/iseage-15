@@ -174,7 +174,34 @@ def make_deposit():
 
 @app.route('/cgi-bin/actions/make-payment')
 def make_payment():
-    pass
+    session_user = get_session_user()
+
+    if session_user == "ADMINISTRATOR":
+        from_user = request.args.get('user_name')
+    else:
+        from_user = session_user
+
+    to_user = request.args.get("other_party")
+    DBfrom_user = User.query.filter_by(username=from_user).one()
+    DBto_user = User.query.filter_by(username=to_user).one()
+    if not DBfrom_user:
+        res = make_response("User " + from_user + " not found!\n", 404)
+        res.headers['Content-type'] = 'text/plain'
+        return res
+
+    if not DBto_user:
+        res = make_response("Other party " + to_user + " not found!\n", 404)
+        res.headers['Content-type'] = 'text/plain'
+        return res
+
+    amount = request.args.get('amount')
+    from_user_last = Transaction.query.filter_by(user_id=DBfrom_user.id).order_by(desc(Transaction.date)).last()
+    to_user_last = Transaction.query.filter_by(user_id=DBto_user.id).order_by(desc(Transaction.date)).last()
+    from_new_amount = from_user_last.balance - amount
+    to_user_amount = to_user_last.balance + amount
+
+    from_transaction = Transaction(from_user.id, 
+
 
 @app.route('/cgi-bin/actions/make-withdrawal')
 def make_withdrawal():
