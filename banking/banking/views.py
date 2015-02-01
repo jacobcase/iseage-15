@@ -18,35 +18,6 @@ INVALID_SESSION = ("Your session is invalid or has expired from inactivity, plea
 def forbidden():
     return ("Forbidden!", 403)
 
-def valid_admin():
-
-def valid_session():
-    # For now just validate the token, this is useful if we decide to
-    # do server side sessions
-    token = session.get('access_token')
-    if not token:
-        return False, redirect(url_for('landing'))
-    s.validate(token)
-
-def allowed_access(name):
-    if valid_admin():
-        return True
-
-    token = session.get('access_token')
-    if not token:
-        return False
-
-    token_name = s.unsign(token)
-    if token_name != name:
-        return False
-
-    return True
-
-def refresh_session():
-    token = session.get('access_token')
-    user = s.unsign(token)
-    token = s.sign(token)
-    session['access_token'] = token
 
 @app.route('/')
 def index():
@@ -54,7 +25,7 @@ def index():
 
 @app.route('/cgi-bin/actions/create-user')
 def create_user():
-    if not valid_admin():
+    if not is_admin():
         return forbidden()
 
     name = request.args.get("name")
@@ -62,6 +33,10 @@ def create_user():
 
     user = User(name, password)
     DB.session.add(user)
+    DB.session.flush()
+    DB.session.refresh(user)
+    initial_trans = Transaction(user.id, "initial", Transaction.CREDIT, 0, 0)
+    DB.session.add(initial_trans)
     DB.session.commit()
 
     res = make_response(redirect(url_for('show_user', user_name=user)))
@@ -71,40 +46,46 @@ def create_user():
 
 @app.route('/cgi-bin/actions/delete-user')
 def delete_user():
-    if not valid_admin():
+    if not is_admin():
         return forbidden()
 
-    # TODO: validate
     search_user = request.args.get("user_name")
-    db_user = User.query.filter_by(username=search_user)
-    if not db_user:
-        return ("User " + search_user + " not found!", 404)
+    try:
+        user = get_db_user(search_user)
+    except UserNotFoundError:
+        return plain_response(("User " + search_user + " not found!i\n", 404))
 
-    DB.session.delete(db_user)
+    user_trans = Transaction.query.filter_by(user_id=user.id)
+    for trans in user_trans:
+        DB.session.delete(trans)
+
+    DB.session.delete(user)
     DB.session.commit()
-    return "User " + search_user + " deleted!"
+    return plain_response("User " + search_user + " deleted!")
+
 
 @app.route('/cgi-bin/actions/find-user')
 def find_user():
     """ requires admin """
-    if not valid_admin():
+    if not is_admin():
         return forbidden()
-
-    # TODO: validate
-    search_user = request.args.get("user_name")
-    result = User.query.filter_by(username=search_user).first()
-    if not result:
+    
+    try:
+        user = get_db_user(request.args.get('user_name'))
+    except UserNotFoundError:
         return (app.send_static_file('user-not-found.html'), 404)
 
-    res = make_response(str(result.balance))
-    res.headers['Content-type'] = 'text/plain'
-    return res
+    balance = get_balance(user)
+
+    return plain_response(str(balance))
 
 
 @app.route('/cgi-bin/actions/get-access-token')
 def get_access_token():
     password = request.args.get('password')
-    user = request.args.get('user_name')
+    try:
+        user = get_db_user(request.args.get('user_name'))
+    except UserNotFoundError:
     db_user = User.query.filter_by(username=user).first()
     if not db_user:
         res = make_response("User not into existing\n")
@@ -152,19 +133,26 @@ def make_deposit():
     if not valid_admin():
         return forbidden()
      
-    search_user = request.args.get("user_name")
-    DBuser = User.query.filter_by(username=search_user).first()
-    if not DBuser:
+    search_name = request.args.get("user_name")
+    if not search_name:
+        res = make_response("User " + search_name + " does not exist!\n", 404)
+        res.headers['Content-type'] = 'text/plain'
+        return res
+
+    user = User.query.filter_by(username=search_user).first()
+    if not user:
         res = make_response("User " + search_user + " does not exist!\n", 404)
         res.headers['Content-type'] = 'text/plain'
         return res
+
     amount = request.args.get('amount')
     try:
         amount = int(amount)
     except Exception:
         pass
 
-    new_balance = DBuser.balance + amount
+    last_trans = Transaction.query.filter_by(user_id=user.id).
+    new_balance = 
     trans = Transaction(DBuser.id, Transaction.DEPOSIT, amount, new_balance)
     DB.session.add(trans)
     DB.session.commit()
@@ -200,7 +188,17 @@ def make_payment():
     from_new_amount = from_user_last.balance - amount
     to_user_amount = to_user_last.balance + amount
 
-    from_transaction = Transaction(from_user.id, 
+    from_transaction = Transaction(DBfrom_user.id, to_user,  Transaction.DEBIT, amount, from_new_amount)
+    to_transaction = Transaction(DBto_user.id, from_user, Transaction.CREDIT, amount, to_new_amount)
+
+    DB.session.add(from_transaction)
+    DB.session.add(to_transaction)
+    DB.session.commit()
+
+    res = make_response(redirect(url_for("show_user"), user_name=from_user))
+    res.headers['Content-type'] = 'text/plain'
+    res.data = "amt " + from_new_amount
+    return res
 
 
 @app.route('/cgi-bin/actions/make-withdrawal')
