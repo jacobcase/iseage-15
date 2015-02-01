@@ -1,10 +1,12 @@
 ---
 # file: site.yml
 # sets up the entire system
-- hosts: linux
+- hosts: website
   roles:
     - common
     - firewall
+    - docker
+    - banking-site
 
 - hosts: gateway
   roles:
