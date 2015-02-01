@@ -1,0 +1,7 @@
+/lib
+/build
+/bin
+*.pyc
+/dist
+/include
+/banking.egg-info

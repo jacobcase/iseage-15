@@ -8,7 +8,7 @@ from datetime import datetime
 #   TODO: configure mysql
 
 app.config['SECRET_KEY'] = "todo"
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite://'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:rootpass@localhost:3306/banking'
 
 DB = SQLAlchemy(app)
 

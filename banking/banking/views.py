@@ -1,7 +1,8 @@
 from flask import render_template, request, session, url_for, redirect, session, make_response, set_cookie
 from itsdangerous import TimestampSigner, SignatureExpired
 from banking import app
-from banking.db import DB, User
+from banking.db import DB, User, Transaction
+from banking.utils import *
 import base64
 import os.path
 
