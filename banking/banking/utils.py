@@ -29,6 +29,7 @@ def get_balance(user):
     return trans.balance
 
 def is_admin(user_name=None)
+
     try:
         db_user = get_db_user(user_name)
     except UserNotFoundError:
@@ -58,3 +59,5 @@ def plain_response(response, data=None, code=None):
             res.status_code = code
         return res
 
+def empty_response():
+    return ('', 204)
