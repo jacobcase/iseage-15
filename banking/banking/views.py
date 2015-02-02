@@ -1,10 +1,11 @@
-from flask import render_template, request, session, url_for, redirect, session, make_response, set_cookie
+from flask import render_template, request, session, url_for, redirect, session, make_response
 from itsdangerous import TimestampSigner, SignatureExpired
-from banking import app
+from banking import app, signer
 from banking.db import DB, User, Transaction
 from banking.utils import *
 import base64
 import os.path
+import pdb
 
 SESSION_AGE = 600
 
@@ -12,7 +13,6 @@ SESSION_AGE = 600
 #   restarted, this may be unwanted but the server shouldn't crash since
 #   it catches exceptions and just fails at one request
 
-s = TimestampSigner(base64.b64encode(os.urandom(32)))
 
 INVALID_SESSION = ("Your session is invalid or has expired from inactivity, please log in again", 403)
 
@@ -72,7 +72,7 @@ def find_user():
         return forbidden()
     
     try:
-        user = get_db_user(request.args.get('user_name'))
+        user = get_db_user(user_name=request.args.get('user_name'))
     except UserNotFoundError:
         return (app.send_static_file('user-not-found.html'), 404)
 
@@ -81,25 +81,32 @@ def find_user():
     return plain_response(str(balance))
 
 
-@app.route('/cgi-bin/actions/get-access-token')
+@app.route('/cgi-bin/actions/get-access-token', methods=['GET', 'POST'])
 def get_access_token():
-    password = request.args.get('password')
+    pdb.set_trace()
+    if request.method == 'POST':
+        user = request.form.get('user_name')
+        password = request.form.get('password')
+    else:
+        user = request.args.get('user_name')
+        password = request.args.get('password')
     try:
-        user = get_db_user(request.args.get('user_name'))
+        user = get_db_user(user_name=user)
     except UserNotFoundError:
         return plain_response("User not into existing\n")
 
     if not user.verify_pass(password):
         return plain_response(redirect(url_for('landing')), data="Wrong!\n")
 
-    session['access_token'] = signer.sign(user)
-    return plain_response(redirect(url_for('landing')), data=("access_token=" + session['access_token']))
+    session['access_token'] = signer.sign(user.username)
+    return plain_response(redirect(url_for('landing')), data=(b"access_token=" + session['access_token']))
 
 @app.route('/cgi-bin/actions/get-admin-access-token')
 def get_admin_token():
+    pdb.set_trace()
     password = request.args.get('password')
     try:
-        user = get_db_user("ADMINISTRATOR")
+        user = get_db_user(user_name="ADMINISTRATOR")
     except UserNotFoundError:
         return plain_response("User not into existing\n")
 
@@ -120,7 +127,7 @@ def make_deposit():
         return forbidden()
      
     try:
-        user = get_db_user(request.args.get("user_name"))
+        user = get_db_user(user_name=request.args.get("user_name"))
     except UserNotFoundError:
         user = request.args.get("user_name")
         return plain_response(("User " + str(user) + " does not exist!\n", 404))
@@ -136,7 +143,8 @@ def make_deposit():
     trans = Transaction(user.id, "Deposit", Transaction.CREDIT, amount, new_balance)
     DB.session.add(trans)
     DB.session.commit()
-    return plain_response(redirect(url_for('show_user'), user_name=user.username), data=("amt " + str(new_balance))
+    return plain_response(redirect(url_for('show_user'), user_name=user.username), data=("amt " +
+        str(new_balance)))
 
 
 @app.route('/cgi-bin/actions/make-payment')
@@ -206,15 +214,17 @@ def make_withdrawal():
 
 @app.route('/cgi-bin/show/landing')
 def landing():
-    user = get_session_user()
-    if not user:
+    pdb.set_trace()
+    try:
+        user = get_db_user()
+    except (InvalidSessionError, UserNotFoundError):
         return render_template("not-logged-in.html")    
-    else:
-        return render_template("welcome.html", USER_NAME=user)
+    return render_template("welcome.html", USER_NAME=user.username)
 
 
 @app.route('/cgi-bin/show/show-user')
 def show_user():
+    pdb.set_trace()
     try:
         user = get_db_user()
     except InvalidSessionError:

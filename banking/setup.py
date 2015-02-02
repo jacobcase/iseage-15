@@ -7,5 +7,11 @@ setup(
         packages=['banking'],
         zip_safe=False,
         include_package_data=True,
-        install_requires=['tornado', 'flask', 'flask-sqlalchemy']
+        install_requires=[
+            'tornado', 
+            'passlib', 
+            'flask', 
+            'pymysql',
+            'sqlalchemy', 
+            'flask-sqlalchemy']
 )
