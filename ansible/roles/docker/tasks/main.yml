@@ -14,4 +14,6 @@
     name: lxc-docker
     state: present
 
-
+- name: install docker-py
+  pip:
+    name: docker-py

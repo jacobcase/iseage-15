@@ -2,7 +2,8 @@
 # file: site.yml
 # sets up the entire system
 - hosts: banking-site
-  sudo: yes
+  remote_user: root
   roles:
+    - common
     - docker
     - banking-site

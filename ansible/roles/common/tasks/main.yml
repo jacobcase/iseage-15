@@ -1,9 +1,10 @@
-- apt: update-cache=yes
+- apt: update-cache=yes cache_valid_time=3600
 
-- apt: upgrade-dist
+- apt: upgrade=yes
 
 - name: install common packages
   apt: pkg={{item}} state=installed
   with_items:
     - htop
     - ntp
+    - python-pip

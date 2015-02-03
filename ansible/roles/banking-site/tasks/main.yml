@@ -42,10 +42,6 @@
     priv: "banking.*:ALL"
 
 
-# next up prepare the source code. rather not rsync the 
-# root of banking because of virtualenvs and compiled bytecode
-# also rsync to root doesn't work with sudo, so copy the data
-# to the default ubuntu user and copy it to root
 - name: ensure directory exists
   file: path="/root/banking/" state=directory
 
@@ -60,6 +56,20 @@
     src: "../../../../banking/banking"
     dest: "/root/banking/"
     recursive: yes
-    rsync_path: "sudo rsync"
+    # rsync_path: "sudo rsync"
+
+
+- name: copy the docker file over
+  copy:
+    src: "../../../../banking/Dockerfile"
+    dest: "/root/"
+
+- name: pull latest ubuntu images
+  docker:
+    image: "ubuntu:14.04"
+
+- name: build docker file
+  command: docker build -t banking . chdir=/root/
+    
 
 
