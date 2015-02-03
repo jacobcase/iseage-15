@@ -8,14 +8,14 @@ from datetime import datetime
 #   TODO: configure mysql
 
 app.config['SECRET_KEY'] = "todo"
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite://'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:rootpass@localhost:3306/banking'
 
 DB = SQLAlchemy(app)
 
 class User(DB.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(80)), unique=True)
-    password = db.Column(db.String(255))
+    id = DB.Column(DB.Integer, primary_key=True)
+    username = DB.Column(DB.String(80), unique=True)
+    password = DB.Column(DB.String(255))
 
     def __init__(self, username, password):
         self.username = username
@@ -32,13 +32,13 @@ class Transaction(DB.Model):
     DEBIT = True
     CREDIT = False
 
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer)
-    transaction = db.Column(db.String(80))
-    trans_type = db.Column(db.Boolean)
-    amount = db.Column(db.Integer)
-    balance = db.Column(db.Integer)
-    date = db.Column(db.Date)
+    id = DB.Column(DB.Integer, primary_key=True)
+    user_id = DB.Column(DB.Integer)
+    transaction = DB.Column(DB.String(80))
+    trans_type = DB.Column(DB.Boolean)
+    amount = DB.Column(DB.Integer)
+    balance = DB.Column(DB.Integer)
+    date = DB.Column(DB.Date)
 
     def __init__(self, user_id, transaction, trans_type, amount, balance):
         self.user_id = user_id

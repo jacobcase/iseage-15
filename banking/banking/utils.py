@@ -1,5 +1,7 @@
 from banking import signer
-from flask import session
+from flask import session, Response, make_response
+from banking.db import User, Transaction, DB
+from itsdangerous import BadSignature
 
 class UserNotFoundError(Exception):
     def __init__(self, message):
@@ -7,7 +9,7 @@ class UserNotFoundError(Exception):
 
 class InvalidSessionError(Exception):
     def __init__(self, message):
-        super(InvalidSessionError, self).__init__(mesage)
+        super(InvalidSessionError, self).__init__(message)
 
 
 def get_db_user(user_name=None):
@@ -15,8 +17,14 @@ def get_db_user(user_name=None):
         token = session.get('access_token')
         if not token:
             raise InvalidSessionError("Access token not found")
-    
-        user = s.unsign(token)
+
+        try:
+            user = signer.unsign(token)
+        except BadSignature:
+            raise InvalidSessionError("Bad cookie signature")
+
+    else:
+        user = user_name
 
     db_user = User.query.filter_by(username=user).first()
     if not db_user:
@@ -28,7 +36,8 @@ def get_balance(user):
     trans = Transaction.query.filter_by(user.id).order_by(desc(Transaction.date)).last()
     return trans.balance
 
-def is_admin(user_name=None)
+def is_admin(user_name=None):
+
     try:
         db_user = get_db_user(user_name)
     except UserNotFoundError:
@@ -58,3 +67,5 @@ def plain_response(response, data=None, code=None):
             res.status_code = code
         return res
 
+def empty_response():
+    return ('', 204)

@@ -1,9 +1,11 @@
-from flask import render_template, request, session, url_for, redirect, session, make_response, set_cookie
+from flask import render_template, request, session, url_for, redirect, session, make_response
 from itsdangerous import TimestampSigner, SignatureExpired
-from banking import app
-from banking.db import DB, User
+from banking import app, signer
+from banking.db import DB, User, Transaction
+from banking.utils import *
 import base64
 import os.path
+import pdb
 
 SESSION_AGE = 600
 
@@ -11,7 +13,6 @@ SESSION_AGE = 600
 #   restarted, this may be unwanted but the server shouldn't crash since
 #   it catches exceptions and just fails at one request
 
-s = TimestampSigner(base64.b64encode(os.urandom(32)))
 
 INVALID_SESSION = ("Your session is invalid or has expired from inactivity, please log in again", 403)
 
@@ -71,7 +72,7 @@ def find_user():
         return forbidden()
     
     try:
-        user = get_db_user(request.args.get('user_name'))
+        user = get_db_user(user_name=request.args.get('user_name'))
     except UserNotFoundError:
         return (app.send_static_file('user-not-found.html'), 404)
 
@@ -80,52 +81,44 @@ def find_user():
     return plain_response(str(balance))
 
 
-@app.route('/cgi-bin/actions/get-access-token')
+@app.route('/cgi-bin/actions/get-access-token', methods=['GET', 'POST'])
 def get_access_token():
-    password = request.args.get('password')
+    pdb.set_trace()
+    if request.method == 'POST':
+        user = request.form.get('user_name')
+        password = request.form.get('password')
+    else:
+        user = request.args.get('user_name')
+        password = request.args.get('password')
     try:
-        user = get_db_user(request.args.get('user_name'))
+        user = get_db_user(user_name=user)
     except UserNotFoundError:
-    db_user = User.query.filter_by(username=user).first()
-    if not db_user:
-        res = make_response("User not into existing\n")
-        res.headers['Content-type'] = 'text/plain'
-        return res
+        return plain_response("User not into existing\n")
 
-    if not db_user.verify_pass(password):
-        res = make_response(redirect(url_for('landing')))
-        res.data = "Wrong!\n"
-        res.headers['Content-type'] = 'text/plain'
-        return res
+    if not user.verify_pass(password):
+        return plain_response(redirect(url_for('landing')), data="Wrong!\n")
 
-    session['access_token'] = s.sign(user)
-    res = make_response(redirect(url_for('landing')))
-    res.data = "access_token=" + session['access_token']
-    res.headers['Content-type'] = 'text/plain'
-    return res
+    session['access_token'] = signer.sign(user.username)
+    return plain_response(redirect(url_for('landing')), data=(b"access_token=" + session['access_token']))
 
 @app.route('/cgi-bin/actions/get-admin-access-token')
 def get_admin_token():
+    pdb.set_trace()
     password = request.args.get('password')
-    user = "ADMINISTRATOR"
-    db_user = User.query.filter_by(username=user).first()
-    if not db_user:
-        res = make_request("User not into existing\n")
-        res.headers['Content-type'] = 'text/plain'
-        return res
-    if not db_user.verify_pass(password):
-        res = make_request("Wrong!\n")
-        res.headers['Content-type'] = 'text/plain'
-        return res
+    try:
+        user = get_db_user(user_name="ADMINISTRATOR")
+    except UserNotFoundError:
+        return plain_response("User not into existing\n")
 
-    session['access_token'] = s.sign(user)
-    res = make_response("access_token=" + session['access_token'])
-    res.headers['Content-type'] = 'text/plain'
-    return res
+    if not user.verify_pass(password):
+        return plain_response("Wrong!\n")
+
+    session['access_token'] = signer.sign(user)
+    return plain_response("access_token=" + session['access_token'])
 
 @app.route('/cgi-bin/actions/logout')
 def logout():
-    res = make_response()
+    session.clear()
     return redirect(url_for("landing"))
 
 @app.route('/cgi-bin/actions/make-deposit')
@@ -133,120 +126,122 @@ def make_deposit():
     if not valid_admin():
         return forbidden()
      
-    search_name = request.args.get("user_name")
-    if not search_name:
-        res = make_response("User " + search_name + " does not exist!\n", 404)
-        res.headers['Content-type'] = 'text/plain'
-        return res
-
-    user = User.query.filter_by(username=search_user).first()
-    if not user:
-        res = make_response("User " + search_user + " does not exist!\n", 404)
-        res.headers['Content-type'] = 'text/plain'
-        return res
+    try:
+        user = get_db_user(user_name=request.args.get("user_name"))
+    except UserNotFoundError:
+        user = request.args.get("user_name")
+        return plain_response(("User " + str(user) + " does not exist!\n", 404))
 
     amount = request.args.get('amount')
     try:
         amount = int(amount)
     except Exception:
-        pass
+        return empty_response()
 
-    last_trans = Transaction.query.filter_by(user_id=user.id).
-    new_balance = 
-    trans = Transaction(DBuser.id, Transaction.DEPOSIT, amount, new_balance)
+    balance = get_balance(user)
+    new_balance = balanc + amount
+    trans = Transaction(user.id, "Deposit", Transaction.CREDIT, amount, new_balance)
     DB.session.add(trans)
     DB.session.commit()
-    res = make_response(redirect("show_user"))
-
+    return plain_response(redirect(url_for('show_user'), user_name=user.username), data=("amt " +
+        str(new_balance)))
 
 
 @app.route('/cgi-bin/actions/make-payment')
 def make_payment():
-    session_user = get_session_user()
-
-    if session_user == "ADMINISTRATOR":
-        from_user = request.args.get('user_name')
+    if not is_admin():
+        from_user = get_db_user()
     else:
-        from_user = session_user
+        try:
+            from_user = get_db_user(request.args.get('user_name'))
+        except UserNotFoundError:
+            user = request.args.get('user_name')
+            return plain_response(("User " + str(user) + " not found!\n", 404))
 
-    to_user = request.args.get("other_party")
-    DBfrom_user = User.query.filter_by(username=from_user).one()
-    DBto_user = User.query.filter_by(username=to_user).one()
-    if not DBfrom_user:
-        res = make_response("User " + from_user + " not found!\n", 404)
-        res.headers['Content-type'] = 'text/plain'
-        return res
-
-    if not DBto_user:
-        res = make_response("Other party " + to_user + " not found!\n", 404)
-        res.headers['Content-type'] = 'text/plain'
-        return res
+    try:
+        to_user = get_db_user(request.args.get('other_party'))
+    except UserNotFoundError:
+        user = request.args.get('other_party')
+        return plain_response(("Other party " + str(user) + " not found!\n", 404))
 
     amount = request.args.get('amount')
-    from_user_last = Transaction.query.filter_by(user_id=DBfrom_user.id).order_by(desc(Transaction.date)).last()
-    to_user_last = Transaction.query.filter_by(user_id=DBto_user.id).order_by(desc(Transaction.date)).last()
-    from_new_amount = from_user_last.balance - amount
-    to_user_amount = to_user_last.balance + amount
+    try:
+        amount = int(amount)
+    except Exception:
+        return empty_response()
 
-    from_transaction = Transaction(DBfrom_user.id, to_user,  Transaction.DEBIT, amount, from_new_amount)
-    to_transaction = Transaction(DBto_user.id, from_user, Transaction.CREDIT, amount, to_new_amount)
+    from_balance = get_balance(from_user)
+    to_balance = get_balance(to_user)
+    from_new_balance = from_balance - amount
+    to_new_balance = to_balance + amount
+
+    from_transaction = Transaction(from_user.id, to_user.username,  Transaction.DEBIT, amount, from_new_balance)
+    to_transaction = Transaction(to_user.id, from_user.username, Transaction.CREDIT, amount, to_new_balance)
 
     DB.session.add(from_transaction)
     DB.session.add(to_transaction)
     DB.session.commit()
 
-    res = make_response(redirect(url_for("show_user"), user_name=from_user))
-    res.headers['Content-type'] = 'text/plain'
-    res.data = "amt " + from_new_amount
-    return res
+    return plain_response(redirect(url_for("show_user"), user_name=from_user.username), data=("amt "
+        + str(from_new_balance)))
 
 
 @app.route('/cgi-bin/actions/make-withdrawal')
 def make_withdrawal():
-    if not session_admin():
+    if not is_admin():
         return forbidden()
-    user = request.args.get("user_name")
 
-    DBuser = User.query.filter_by(username=user).first()
-    if not DBuser:
-        res = make_response(("User " + user + " does not exist", 404))
-        res.headers['Content-type'] = 'text/plain'
-        return res
+    try:
+        user = get_db_user(request.args.get("user_name"))
+    except UserNotFoundError:
+        user = request.args.get("user_name")
+        return plain_response(("User " + str(user) + " does not exist", 404))
+
     amount = request.args.get('amount')
-    last_trans = Transaction.query.filter_by(user_id=DBuser.id).order_by(desc(Transaction.date)).last()
-    new_amount = last_trans.balance - amount
-    new_trans = Transaction(DBuser.id, 
+    try:
+        amount = int(amount)
+    except Exception:
+        return empty_response()
+
+    balance = get_balance(user)
+    new_balance = balance - amount
+    new_trans = Transaction(user.id, "Withdrawal", Transaction.DEBIT, amount, new_balance)
+    DB.session.add(new_trans)
+    DB.session.commit()
+    return plain_response(redirect(url_for('show_user'), user_name=user.username), data=("amt " +
+        str(new_balance)))
 
 
 @app.route('/cgi-bin/show/landing')
 def landing():
-    user = get_session_user()
-    if not user:
+    pdb.set_trace()
+    try:
+        user = get_db_user()
+    except (InvalidSessionError, UserNotFoundError):
         return render_template("not-logged-in.html")    
-    else:
-        return render_template("welcome.html", USER_NAME=user)
+    return render_template("welcome.html", USER_NAME=user.username)
 
 
 @app.route('/cgi-bin/show/show-user')
 def show_user():
-    user = get_session_user()
-    if not user:
+    pdb.set_trace()
+    try:
+        user = get_db_user()
+    except InvalidSessionError:
         return forbidden()
-
-    req_user = request.args.get("user_name")
-    if not req_user:
-        return forbidden()
-
-    if not session_admin() and user != req_user:
-        return forbidden()
-
-    
-    DBuser = User.query.filter_by(username=req_user).first()
-    if not DBuser:
+    except UserNotFoundError:
         return (render_template("user-not-found.html"), 404)
 
+    try:
+        req_user = get_db_user(request.args.get("user_name"))
+    except UserNotFoundError:
+        return (render_template("user-not-found.html"), 404)
+
+    if not user.isAdmin() and user.id != req_user.id:
+        return forbidden()
+
     transaction_array = []
-    transactions = Transaction.query.filter_by(user_id = DBuser.id).order_by(desc(Transaction.date)).all()
+    transactions = Transaction.query.filter_by(user_id = req_user.id).order_by(desc(Transaction.date)).all()
     for transaction in transactions:
         tmp = []
         tmp.append(transaction.transaction)
@@ -260,6 +255,6 @@ def show_user():
         tmp.append(transaction.balance)
         transaction_array.append(tmp)
 
-    balance = transaction_array[len(transaction_array) - 1][3] 
+    balance = get_balance(req_user) 
 
     return render_template("user.html", USER_NAME=req_user, BALANCE=balance, TABLE=transaction_array)

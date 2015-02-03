@@ -1,12 +1,8 @@
 ---
 # file: site.yml
 # sets up the entire system
-- hosts: linux
+- hosts: banking-site
+  sudo: yes
   roles:
-    - common
-    - firewall
-
-- hosts: gateway
-  roles:
-    - nat
-
+    - docker
+    - banking-site
