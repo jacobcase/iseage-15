@@ -1,63 +1,122 @@
 #!/bin/bash
 
-WEB="{{ router_iface_external[0] }}"
-AD="{{ router_iface_external[1] }}"
-RDP="{{ router_iface_external[2] }}"
-EWEB="{{ external_ip[0] }}"
-ERDP="{{ external_ip[1]}}"
-EAD="{{ external_ip[2] }}"
-IWEB="{{ internal_ip[0] }}"
-IAD="{{ internal_ip[1] }}"
-IRDP="{{ internal_ip[2] }}"
+# Vlans
+{% for vlans in router_iface_external %}
+{{ vlans.name }}="{{ vlans.iface }}"
+{% endfor %}
 
-####### REMOVE RULE LATER
-iptables -A INPUT -p tcp --dport 22 -j ACCEPT
+# Exteranl ips
+{% for external in external_ip %}
+E{{ external.name }}="{{ external.iface }}"
+{% endfor %}
+
+# Internal ips
+{% for internal in internal_ip %}
+I{{ internal.name }}="{{ internal.iface }}"
+{% endfor %}
+
 
 # Flush
 iptables -F
 iptables -t nat -F
+iptables -X
+iptables -t nat -X
+iptables -t mangle -F
+iptables -t mangle -X
 
-# Firewall
+## Firewall
+
+# Allow loopback and drop loopback spoofing
 iptables -A INPUT -i lo -p all -j ACCEPT
 iptables -A OUTPUT -o lo -p all -j ACCEPT
-iptables -A INPUT -i $WEB -j ACCEPT
-iptables -A INPUT -i $AD -j ACCEPT
-iptables -A INPUT -i $RDP -j ACCEPT
-iptables -A IPNUT -p all -s localhost -i eth0 -j DROP
 
-# DOS Attacks mitigation
-iptables -p tcp --syn --dport 80 -m connlimit --connlimit-above 16 -j REJECT
-iptables -A INPUT -p tcp --dport -m state --state NEW -m limit --limit 50/minute -j ACCEPT
-iptables -A INPUT -m quota --quota 1073741824 -j ACCEPT
+{% for vlan in router_iface_external %}
+iptables -A INPUT -p all -s localhost -i {{vlan.iface}} -j DROP
+{% endfor %}
+
+# Drop all internal traffic coming
+iptables -A INPUT -s 127.0.0.0/8 -j REJECT
+
+{% for external  in external_ip %}
+iptables -A INPUT -s $E{{ external.name }}/32 -j DROP
+{% endfor %}
+
+# Accept all established inbound traffic
+iptables -A INPUT -m state --state RELATED,ESTABLISHED -m limit --limit 50/second --limit-burst 50 -j ACCEPT 
+
+# Allow ping and limit
+iptables -A INPUT -p icmp -m limit --limit 4/second --limit-burst 4 -j ACCEPT
+
+# Allow outbound traffic
+iptables -A OUTPUT -j ACCEPT
+
+# Forward port on each interface
+{% for external in external_ip %}
+{% for ports in external %}
+iptables -A INPUT -p tcp -i $E{{ external.name }} --dport {{ ports.port }} -j ACCEPT
+{% endfor %}
+{% endfor %}
+
+# Reject all ports
+iptables -A INPUT -j REJECT
+iptables -A FORWARD -j DROP
+
+# DOS Attacks mitigation 
+iptables -A INPUT -p tcp --syn --dport 80 -m connlimit --connlimit-above 100 -j REJECT
 
 # Prevent brute-force attacks
 iptables -A INPUT -p tcp --dport 22 -m state --state NEW -m recent --set
-iptables -A INPUT -p tcp --dport 22 -m state --state NEW -m recent --update --seconds 60 --hitcount 4 -j DROP
+iptables -A INPUT -p tcp --dport 22 -m state --state NEW -m recent --update --seconds 60 --hitcount 8 -j DROP
 
 # prevent port scan
-iptables -A INPUT -p tcp -m state --state NEW -m state --state NEW -m recent --set
-iptables -A INPUT -p tcp -m state --state NEW -m recent --update --seconds 30 --hitcount 10 -j DROP
-iptables -A FORWARD -p tcp -m state --state NEW -m recent --set
-iptables -A FORWARD -p tcp -m state --state NEW -m recent --update --seconds 30 --hitcount 10 -j DROP
+{% for ip in external_ip %}
+iptables -A INPUT -i {{ ip }} -p tcp -m tcp --tcp-flags FIN,SYN,RST,PSH,ACK,URG NONE -j DROP
+iptables -A INPUT -i {{ ip }} -p tcp -m tcp --tcp-flags FIN,SYN FIN,SYN -j DROP
+iptables -A INPUT -i {{ ip }} -p tcp -m tcp --tcp-flags SYN,RST SYN,RST -j DROP
+iptables -A INPUT -i {{ ip }} -p tcp -m tcp --tcp-flags FIN,RST FIN,RST -j DROP
+iptables -A INPUT -i {{ ip }} -p tcp -m tcp --tcp-flags FIN,ACK FIN -j DROP
+iptables -A INPUT -i {{ ip }} -p tcp -m tcp --tcp-flags ACK,URG URG -j DROP
+iptables -A INPUT -i {{ ip }} -p tcp -m state --state NEW -m state --state NEW -m recent --set
+iptables -A INPUT -i {{ ip }} -p tcp -m state --state NEW -m recent --update --seconds 30 --hitcount 10 -j DROP
+iptables -A FORWARD -i {{ ip }} -p tcp -m state --state NEW -m recent --set
+iptables -A FORWARD -i {{ ip }} -p tcp -m state --state NEW -m recent --update --seconds 30 --hitcount 10 -j DROP
+{% endfor %}
 
-iptables -A INPUT -p icmp -j ACCEPT
-iptables -A INPUT -p tcp -i $WEB --dport 80 -j ACCEPT
-iptables -A INPUT -p tcp -i $WEB --dport 22 -j ACCEPT
-iptables -A INPUT -p tcp -i $AD --dport 53 -j ACCEPT 
-iptables -A INPUT -p tcp -i $RDP --dport 3389 -j ACCEPT 
-iptables -A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
-iptables -A INPUT -j REJECT
+iptables -N PORT_SCANNING
+iptables -A PORT_SCANNING -p tcp --tcp-flags SYN,ACK,FIN,RST RST -m limit --limit 1/s -j RETURN
+iptables -A PORT_SCANNING -j DROP
+iptables -A INPUT -p tcp --tcp-flags ALL FIN,PSH,URG -j DROP
+iptables -A INPUT -p tcp -m state --state NEW -m limit --limit 4/second --limit-burst 4 -j ACCEPT
+iptables -A INPUT -p tcp --dport 80 -m state --state NEW -m limit --limit 50/minute --limit-burst 200 -j ACCEPT
+
+# Only use UDP for DNS drop the rest
+iptables -A INPUT -i $AD -p udp --sport 53 -j ACCEPT
+iptables -A INPUT -i $RDP -p udp --sport 3389 -j ACCEPT
+iptables -A INPUT -i $AD -p udp --dport 53 -j ACCEPT
+iptables -A INPUT -i $RDP -p udp --dport 3389 -j ACCEPT
+iptables -A OUTPUT -o $AD -p udp --sport 53 -j ACCEPT
+iptables -A OUTPUT -o $AD -p udp --dport 53 -j ACCEPT
+iptables -A INPUT -i $AD -p udp -j DROP
+iptables -A OUTPUT -o $AD -p udp -j DROP
 
 # Routing
+{% for vlan in router_iface_external %}
 iptables -A FORWARD -i $WEB -j ACCEPT
-iptables -A FORWARD -i $AD -j ACCEPT
-iptables -A FORWARD -i $RDP -j ACCEPT
+{% endfor %}
 
-#iptables -t nat -A PREROUTING -i $WEB -p tcp --dport 80 -j DNAT --to $IWEBIP:80
-#iptables -t nat -A POSTROUTING -s $IWEBIP -j SNAT --to-destination $EWEBIP
+{% for external in external_ip %}
+{% for ports in external %}
+iptables -t nat -A PREROUTING -d {{ external.address }} -p tcp --dport {{  ports.port }} -j DNAT --to-destination {{ external.internal }}:80
+iptables -t nat -A POSTROUTING -s {{ external.address }} -p tcp --sport 80 -j SNAT --to {{ external.address }}:80
 
-#iptables -t nat -A PREROUTING -d $EAD -j DNAT --to-destination $IAD
-#iptables -t nat -A POSTROUTING -s $IAD -j SNAT --to-destination $EAD
 
-#iptables -t nat -A PREROUTING -d $ERDP -j DNAT --to-destination $IRDP
-#iptables -t nat -A POSTROUTING -s $IRDP -j SNAT --to-destination $ERDP
+#Nflog sending packets to IDS rules; needs nflog installed first
+iptables -I INPUT -i $WEB -j NFLOG --nflog-group 0 --nflog-range 65535
+nflog-zmq-send 0,1 tcp://$IIDS:10000
+
+# Logging
+iptables -N LOGGING
+iptables -A INPUT -j LOGGING
+iptables -A OUTPUT -j LOGGING
+iptables -A LOGGING -m limit --limit 5/min -j LOG --log-prefix "iptables denied: " --log-level 5
+iptables -A LOGGING -j DROP

@@ -1,8 +1,8 @@
 #!/bin/bash
 
-WEB="eth0"
-AD="eth0"
-RDP="eth0"
+WEB="eth0:0"
+AD="eth0:1"
+RDP="eth0:2"
 EWEB="172.22.20.150"
 ERDP="172.22.20.160"
 EAD="172.22.20.170"
@@ -19,8 +19,10 @@ iptables -t nat -X
 iptables -t mangle -F
 iptables -t mangle -X
 
+
 ####### REMOVE RULE LATER
 iptables -A INPUT -p tcp --dport 22 -j ACCEPT
+
 
 ## Firewall
 
@@ -96,15 +98,13 @@ iptables -A FORWARD -i $WEB -j ACCEPT
 iptables -A FORWARD -i $AD -j ACCEPT
 iptables -A FORWARD -i $RDP -j ACCEPT
 
-iptables -t nat -A PREROUTING -i $WEB -d $EWEB -p tcp --dport 80 -j DNAT --to-destination $IWEBIP:80
-iptables -t nat -A PREROUTING -i $WEB -d $EWEB -p tcp --dport 443 -j DNAT --to-destination $IWEBIP:443
-iptables -t nat -A POSTROUTING -s $IWEBIP -p tcp --sport 80 -j SNAT --to $EWEBIP:80
+iptables -t nat -A PREROUTING -d 172.22.20.150 -p tcp --dport 80 -j DNAT --to-destination 192.168.0.100:80
+iptables -t nat -A POSTROUTING -s 192.168.0.100 -p tcp --sport 80 -j SNAT --to $172.22.20.150:80
 
 
-# Nflog sending packets to IDS rules; needs nflog installed first
+#Nflog sending packets to IDS rules; needs nflog installed first
 iptables -I INPUT -i $WEB -j NFLOG --nflog-group 0 --nflog-range 65535
 nflog-zmq-send 0,1 tcp://$IIDS:10000
-
 
 # Logging
 iptables -N LOGGING
