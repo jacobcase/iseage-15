@@ -3,6 +3,7 @@ import yaml
 import argparse
 from banking.db import DB, User, Transaction
 import pdb
+import sys
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-t", "--transaction", type=str)
@@ -14,42 +15,35 @@ trans = args.transaction.split()
 t_type = trans[0]
 t_amount = int(trans[1])
 t_user = trans[2]
-t_id = int(trans[len(trans) - 1])
-
-res = Transaction.query.filter_by(id=t_id).first()
-if res:
-    print("key already exists")
-    return
 
 user = User.query.filter_by(username=t_user).first()
 if not user:
     print("user not found")
-    return
+    sys.exit(2)
 
-prev = Transaction.query.filter_by(user.id).filter_by(id < t_id).order_by(Transaction.id).last()
-
+prev = Transaction.query.filter_by(user_id=user.id).order_by(Transaction.id.desc()).first()
 
 if t_type == "deposit":
     balance = prev.balance + t_amount
-    t = Transaction(user.id, "Deposit", Transaction.CREDIT, t_amount, balance, key=t_id)
+    t = Transaction(user.id, "Deposit", Transaction.CREDIT, t_amount, balance)
     DB.session.add(t)
 elif t_type == "withdrawal":
     balance = prev.balance - t_amount
-    t = Transaction(user.id, "Withdrawal", Transaction.DEBIT, t_amount, balance, key=t_id)
+    t = Transaction(user.id, "Withdrawal", Transaction.DEBIT, t_amount, balance)
     DB.session.add(t)
 
 elif t_type == "transfer":
     other_user = User.query.filter_by(username=trans[3]).first()
     if not other_user:
         print("Other user does not exist")
-        return
+        sys.exit(2)
 
-    prev_other = Transaction.query.filter_by(other_user.id).filter_by(id < t_id).orger_by(Transaction.id).last()
+    prev_other = Transaction.query.filter_by(user_id=other_user.id).order_by(Transaction.id.desc()).first()
     
     balance = prev.balance - t_amount
-    other_balance = prev_other + t_amount
-    t = Transaction(user.id, other_user.username, Transaction.DEBIT, t_amount, balance, key=t_id)
-    t2 = Transaction(other_user.id, user.username, Transaction.CREDIT, t_amount, other_balance, key=t_id + 1)
+    other_balance = prev_other.balance + t_amount
+    t = Transaction(user.id, other_user.username, Transaction.DEBIT, t_amount, balance)
+    t2 = Transaction(other_user.id, user.username, Transaction.CREDIT, t_amount, other_balance)
 
     DB.session.add(t)
     DB.session.add(t2) 

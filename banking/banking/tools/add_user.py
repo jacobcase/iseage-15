@@ -1,7 +1,7 @@
 
 import yaml
 import argparse
-from banking.db import DB, User
+from banking.db import DB, User, Transaction
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-u", "--name", type=str)
@@ -21,6 +21,11 @@ else:
     print("creating new user")
     user = User(name, pw)
     DB.session.add(user)
+    DB.session.flush()
+    DB.session.refresh(user)
+    trans = Transaction(user.id, "initial", Transaction.CREDIT, 0, 0)
+    DB.session.add(trans)
+    DB.session.commit()
 
 
 DB.session.commit()

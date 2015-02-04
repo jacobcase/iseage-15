@@ -31,6 +31,9 @@
     login_password: "{{ MYSQL_ROOT_PW }}"
     name: banking
     state: present
+  notify:
+    - bootstrap users
+    - bootstrap transactions
 
 - name: configure the web account
   mysql_user:

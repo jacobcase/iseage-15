@@ -5,3 +5,12 @@
     name: banking-web
     state: absent
 
+- name: bootstrap users
+  command: docker run --rm --net="host" -v /root/web_vol:/config banking python3 -m banking.tools.add_user -c /config/config.yml -u {{item.name}} -p {{item.pass}}
+  no_log: True
+  with_items: WEB_USERS
+  
+- name: bootstrap transactions
+  command: docker run --rm --net="host" -v /root/web_vol:/config banking python3 -m banking.tools.add_trans -c /config/config.yml -t "{{item}}"
+  no_log: True
+  with_items: WEB_TRANSACTIONS
