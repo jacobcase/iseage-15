@@ -9,7 +9,7 @@ import argparse
 _parser = argparse.ArgumentParser()
 _parser.add_argument("-c", "--config", help="path to yaml configuration file", type=str)
 
-args = _parser.parse_args()
+args, unknown = _parser.parse_known_args()
 
 if not args:
     print("no args")

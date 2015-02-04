@@ -28,6 +28,8 @@ class User(DB.Model):
     def isAdmin(self):
         return self.username == "ADMINISTRATOR"
 
+    def update_pass(self, password):
+        self.password = sha256_crypt.encrypt(password)
 
 class Transaction(DB.Model):
     DEBIT = True
@@ -39,15 +41,17 @@ class Transaction(DB.Model):
     trans_type = DB.Column(DB.Boolean)
     amount = DB.Column(DB.Integer)
     balance = DB.Column(DB.Integer)
-    date = DB.Column(DB.Date)
+    flag = DB.Column(DB.String(512))
 
-    def __init__(self, user_id, transaction, trans_type, amount, balance):
+    def __init__(self, user_id, transaction, trans_type, amount, balance, key=None):
+        if key:
+            self.id = key
+
         self.user_id = user_id
         self.transaction = transaction
         self.amount = amount
         self.balance = balance
         self.trans_type = trans_type
-        self.date = datetime.utcnow()
 
 
-
+DB.create_all()
