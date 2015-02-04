@@ -17,11 +17,24 @@
                     <th>Balance</th>
 
                 </tr>
-                {% for row in rows %}
+                {% for row in TABLE %}
                 <tr>
-                    {% for cell in row %}
-                    <td>{{ cell }}</td>
+                    <td>{{ row[0] }}</td>
+                    {% if row[1] == None %}
+                        <td>---</td>
+                    {% else %}
+                        <td>{{ row[1] }}</td>
+                    {% endif %}
+
+                    {% if row[2] == None %}
+                        <td>---</td>
+                    {% else %}
+                        <td>{{ row[2] }}</td>
+                    {% endif %}
+
+                    <td>{{ row[3] }}</td>
                 </tr>
+                {% endfor %}
             </table>
             <a href="/cgi-bin/show/landing">Back</a>
         </center>

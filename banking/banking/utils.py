@@ -24,7 +24,7 @@ def get_db_user(user_name=None):
             raise InvalidSessionError("Bad cookie signature")
 
     else:
-        user = user_name
+        user = user_name.strip()
 
     db_user = User.query.filter_by(username=user).first()
     if not db_user:
@@ -33,7 +33,7 @@ def get_db_user(user_name=None):
         return db_user
 
 def get_balance(user):
-    trans = Transaction.query.filter_by(user.id).order_by(desc(Transaction.date)).last()
+    trans = Transaction.query.filter_by(user_id=user.id).order_by(Transaction.id.desc()).first()
     return trans.balance
 
 def is_admin(user_name=None):
@@ -45,7 +45,7 @@ def is_admin(user_name=None):
     except InvalidSessionError:
         return False
 
-    if db_user.name == "ADMINISTRATOR":
+    if db_user.username == "ADMINISTRATOR":
         return True
     else:
         return False

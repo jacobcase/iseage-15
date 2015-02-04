@@ -5,7 +5,6 @@ from banking.db import DB, User, Transaction
 from banking.utils import *
 import base64
 import os.path
-import pdb
 
 SESSION_AGE = 600
 
@@ -83,7 +82,6 @@ def find_user():
 
 @app.route('/cgi-bin/actions/get-access-token', methods=['GET', 'POST'])
 def get_access_token():
-    pdb.set_trace()
     if request.method == 'POST':
         user = request.form.get('user_name')
         password = request.form.get('password')
@@ -103,7 +101,6 @@ def get_access_token():
 
 @app.route('/cgi-bin/actions/get-admin-access-token')
 def get_admin_token():
-    pdb.set_trace()
     password = request.args.get('password')
     try:
         user = get_db_user(user_name="ADMINISTRATOR")
@@ -182,7 +179,7 @@ def make_payment():
     DB.session.add(to_transaction)
     DB.session.commit()
 
-    return plain_response(redirect(url_for("show_user"), user_name=from_user.username), data=("amt "
+    return plain_response(redirect(url_for("show_user", user_name=from_user.username)), data=("amt "
         + str(from_new_balance)))
 
 
@@ -208,13 +205,12 @@ def make_withdrawal():
     new_trans = Transaction(user.id, "Withdrawal", Transaction.DEBIT, amount, new_balance)
     DB.session.add(new_trans)
     DB.session.commit()
-    return plain_response(redirect(url_for('show_user'), user_name=user.username), data=("amt " +
+    return plain_response(redirect(url_for('show_user', user_name=user.username)), data=("amt " +
         str(new_balance)))
 
 
 @app.route('/cgi-bin/show/landing')
 def landing():
-    pdb.set_trace()
     try:
         user = get_db_user()
     except (InvalidSessionError, UserNotFoundError):
@@ -224,7 +220,6 @@ def landing():
 
 @app.route('/cgi-bin/show/show-user')
 def show_user():
-    pdb.set_trace()
     try:
         user = get_db_user()
     except InvalidSessionError:
@@ -241,7 +236,7 @@ def show_user():
         return forbidden()
 
     transaction_array = []
-    transactions = Transaction.query.filter_by(user_id = req_user.id).order_by(desc(Transaction.date)).all()
+    transactions = Transaction.query.filter_by(user_id = req_user.id).order_by(Transaction.id).all()
     for transaction in transactions:
         tmp = []
         tmp.append(transaction.transaction)
@@ -257,4 +252,4 @@ def show_user():
 
     balance = get_balance(req_user) 
 
-    return render_template("user.html", USER_NAME=req_user, BALANCE=balance, TABLE=transaction_array)
+    return render_template("user.html", USER_NAME=req_user.username, BALANCE=balance, TABLE=transaction_array)
