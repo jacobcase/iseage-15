@@ -1,0 +1,4 @@
+- host: webserver
+  user: cdc
+  sudo: yes
+  roles: router
