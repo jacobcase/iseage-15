@@ -1,0 +1,2 @@
+recursive-include banking/templates *
+recursive-include banking/static *

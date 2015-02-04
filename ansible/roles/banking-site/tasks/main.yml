@@ -51,6 +51,12 @@
     dest: "/root/banking/"
     force: yes
 
+- name: copy the static file manifest
+  copy:
+    src: "../../../../banking/MANIFEST.in"
+    dest: "/root/banking/"
+    force: yes
+
 - name: copy the banking module source
   synchronize:
     src: "../../../../banking/banking"
@@ -68,8 +74,30 @@
   docker:
     image: "ubuntu:14.04"
 
+- name: ensure volume directory
+  file: path="/root/web_vol" state=directory mode=0600
+
+- name: copy configuration file over with parameters
+  template:
+    src: ../templates/config.j2
+    dest: /root/web_vol/config.yml
+    mode: 0600
+
 - name: build docker file
   command: docker build -t banking . chdir=/root/
-    
+  notify:
+    - remove running web
+
+- meta: flush_handlers
+
+- name: ensure container for web is running
+  docker:
+    image: banking
+    net: host
+    hostname: www
+    name: banking-web
+    restart_policy: always
+    volumes:
+      - "/root/web_vol:/config"
 
 

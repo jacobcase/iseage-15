@@ -1,0 +1,7 @@
+
+- name: remove running web
+  docker:
+    image: banking
+    name: banking-web
+    state: absent
+

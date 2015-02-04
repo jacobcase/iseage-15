@@ -2,13 +2,14 @@ from flask.ext.sqlalchemy import SQLAlchemy
 #from flask.ext.security import Security, SQLAlchemyUserDatastore, UserMixin, RoleMixin
 from passlib.hash import sha256_crypt
 import os
-from banking import app
+from banking import app, DB_PASS, DB_USER
 from datetime import datetime
+
 
 #   TODO: configure mysql
 
 app.config['SECRET_KEY'] = "todo"
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:rootpass@localhost:3306/banking'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://' + DB_USER + ":" + DB_PASS + '@localhost:3306/banking'
 
 DB = SQLAlchemy(app)
 
