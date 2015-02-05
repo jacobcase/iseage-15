@@ -32,6 +32,6 @@
 - name: configure network
   template: src=interfaces.j2 dest=/etc/network/interfaces mode=0644
   notify:
-    - reload networking
+    - reload network
   tags:
-   - networking
+   - network
