@@ -6,16 +6,18 @@ auto lo
 iface lo inet loopback
 
 # The primary network interface
-auto eth0
-iface eth0 inet static
-address 172.22.20.103
-gateway 172.22.20.254
-up ip addr add 172.22.20.150/24 dev eth0 label eth0:0
-up ip addr add 172.22.20.160/24 dev eth0 label eth0:1
-up ip addr add 172.22.20.170/24 dev eth0 label eth0:2
+{% for router in router_configuration %}
+auto {{ router.iface }}
+iface {{ router.iface }} inet static
+  address {{ router.address}}
+  gateway 200.2.96.254
+  netmask 255.255.255.0
+  broadcast 200.2.96.255
+{% endfor %}
 
 
 auto eth1
 iface eth1 inet static
-address 192.168.1.1
-subnet 255.255.255.0
+  address 192.168.1.254
+  subnet 255.255.255.0
+  broadcast 192.168.1.255
