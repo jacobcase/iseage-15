@@ -7,12 +7,12 @@
 
 # Exteranl ips
 {% for external in external_ip %}
-E{{ external.name }}="{{ external.iface }}"
+{{ external.name }}="{{ external.address }}"
 {% endfor %}
 
 # Internal ips
 {% for internal in internal_ip %}
-I{{ internal.name }}="{{ internal.iface }}"
+{{ internal.name }}="{{ internal.address }}"
 {% endfor %}
 
 
@@ -38,7 +38,7 @@ iptables -A INPUT -p all -s localhost -i {{vlan.iface}} -j DROP
 iptables -A INPUT -s 127.0.0.0/8 -j REJECT
 
 {% for external  in external_ip %}
-iptables -A INPUT -s $E{{ external.name }}/32 -j DROP
+iptables -A INPUT -s ${{ external.name }}/32 -j DROP
 {% endfor %}
 
 # Accept all established inbound traffic
@@ -52,10 +52,13 @@ iptables -A OUTPUT -j ACCEPT
 
 # Forward port on each interface
 {% for external in external_ip %}
-{% for ports in external %}
-iptables -A INPUT -p tcp -i $E{{ external.name }} --dport {{ ports.port }} -j ACCEPT
+{% if port is defined %}
+iptables -A INPUT -p tcp -i ${{ external.name }} --dport {{ ports.port }} -j ACCEPT
+{% endif %}
 {% endfor %}
-{% endfor %}
+
+# Forward ssh on internal
+iptables -A INPUT -p tcp -i {{ internal_interface.iface }} --dport 22 -j ACCEPT
 
 # Reject all ports
 iptables -A INPUT -j REJECT
@@ -105,9 +108,11 @@ iptables -A FORWARD -i $WEB -j ACCEPT
 {% endfor %}
 
 {% for external in external_ip %}
-{% for ports in external %}
-iptables -t nat -A PREROUTING -d {{ external.address }} -p tcp --dport {{  ports.port }} -j DNAT --to-destination {{ external.internal }}:80
-iptables -t nat -A POSTROUTING -s {{ external.address }} -p tcp --sport 80 -j SNAT --to {{ external.address }}:80
+{% if port is defined %}
+iptables -t nat -A PREROUTING -d {{ external.address }} -p tcp --dport {{ external.port }} -j DNAT --to-destination {{ external.internal }}:{{ external.port }}
+iptables -t nat -A POSTROUTING -s {{ external.address }} -p tcp --sport {{ external.port }} -j SNAT --to {{ external.address }}:{{ external.port }}
+{% endif %}
+{% endfor %}
 
 
 #Nflog sending packets to IDS rules; needs nflog installed first

@@ -1,4 +1,6 @@
-- host: webserver
+- hosts: firewall
   user: cdc
   sudo: yes
-  roles: router
+  roles:
+  - router
+
