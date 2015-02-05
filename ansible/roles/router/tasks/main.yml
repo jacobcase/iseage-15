@@ -28,3 +28,10 @@
     - reload iptables
   tags:
     - iptables
+    
+- name: configure networking
+  template: src=interfaces.j2 dest=/etc/network/interfaces mode=0644
+  notify:
+    - reload networking
+  tags:
+   - networking
