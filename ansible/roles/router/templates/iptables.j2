@@ -57,12 +57,11 @@ iptables -A INPUT -p tcp -i ${{ external.name }} --dport {{ ports.port }} -j ACC
 {% endif %}
 {% endfor %}
 
-# Forward ssh on internal
-iptables -A INPUT -p tcp -i {{ internal_interface.iface }} --dport 22 -j ACCEPT
+# Forward ssh
+iptables -A INPUT -p tcp --dport 22 -j ACCEPT
 
 # Reject all ports
 iptables -A INPUT -j REJECT
-iptables -A FORWARD -j DROP
 
 # DOS Attacks mitigation 
 iptables -A INPUT -p tcp --syn --dport 80 -m connlimit --connlimit-above 100 -j REJECT
@@ -103,15 +102,17 @@ iptables -A INPUT -i $AD -p udp -j DROP
 iptables -A OUTPUT -o $AD -p udp -j DROP
 
 # Routing
-{% for vlan in router_iface_external %}
-iptables -A FORWARD -i $WEB -j ACCEPT
-{% endfor %}
-
 {% for external in external_ip %}
 {% if port is defined %}
 iptables -t nat -A PREROUTING -d {{ external.address }} -p tcp --dport {{ external.port }} -j DNAT --to-destination {{ external.internal }}:{{ external.port }}
 iptables -t nat -A POSTROUTING -s {{ external.address }} -p tcp --sport {{ external.port }} -j SNAT --to {{ external.address }}:{{ external.port }}
 {% endif %}
+{% endfor %}
+
+{% for vlan in router_iface_external %}
+iptables -A FORWARD -i eth1 -o {{ vlan.iface }} -j ACCEPT
+iptables -A FORWARD -i {{ vlan.iface }} -o eth1 -m state --state RELATED,ESTABLISHED -j ACCEPT
+iptables -t nat -A POSTROUTING -o {{ vlan.iface }} -j MASQUERADE
 {% endfor %}
 
 
