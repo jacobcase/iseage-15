@@ -34,7 +34,7 @@ iptables -A INPUT -p all -s localhost -i {{router.iface}} -j DROP
 iptables -A INPUT -s 127.0.0.0/8 -j REJECT
 
 {% for router  in router_configuration %}
-iptables -A INPUT -s ${{ router.name }}/32 -j DROP
+iptables -A INPUT -i {{ router.iface }} -s 192.168.1.0/24 -j DROP
 {% endfor %}
 
 # Accept all established inbound traffic
@@ -48,8 +48,10 @@ iptables -A OUTPUT -j ACCEPT
 
 # Forward port on each interface
 {% for router in router_configuration %}
-{% if exposed_port is defined %}
-iptables -A INPUT -p tcp -i ${{ router.name }} --dport {{ router.exposed_port }} -j ACCEPT
+{% if router.exposed_port is defined %}
+{% for port in router.exposed_port %}
+iptables -A INPUT -p tcp -i {{ router.iface }} --dport {{ port }} -j ACCEPT
+{% endfor %}
 {% endif %}
 {% endfor %}
 
@@ -99,9 +101,11 @@ iptables -A OUTPUT -o $AD -p udp -j DROP
 
 # Routing
 {% for router in router_configuration %}
-{% if exposed_port is defined %}
-iptables -t nat -A PREROUTING -d {{ router.address }} -p tcp --dport {{ router.exposed_port }} -j DNAT --to-destination {{ router.internal }}:{{ router.exposed_port }}
-iptables -t nat -A POSTROUTING -s {{ router.address }} -p tcp --sport {{ router.exposed_port }} -j SNAT --to {{ router.address }}:{{ router.exposed_port }}
+{% if router.exposed_port is defined %}
+{% for port in router.exposed_port %}
+iptables -t nat -A PREROUTING -d {{ router.address }} -p tcp --dport {{ port }} -j DNAT --to-destination {{ router.internal }}:{{ port }}
+iptables -t nat -A POSTROUTING -s {{ router.address }} -p tcp --sport {{ port }} -j SNAT --to {{ router.address }}:{{ port }}
+{% endfor %}
 {% endif %}
 {% endfor %}
 
