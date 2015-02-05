@@ -1,2 +1,4 @@
 - name: reload iptables
   command: /etc/network/if-pre-up.d/iptables
+- name: reload network
+  command: /etc/init.d/networking restart
