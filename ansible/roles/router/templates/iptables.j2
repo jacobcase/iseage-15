@@ -1,13 +1,9 @@
 #!/bin/bash
 
-# Vlans
-{% for vlans in router_iface_external %}
-{{ vlans.name }}="{{ vlans.iface }}"
-{% endfor %}
-
-# Exteranl ips
-{% for external in external_ip %}
-{{ external.name }}="{{ external.address }}"
+# Vlans and external ips
+{% for router in router_configuration %}
+{{ router.name }}="{{ router.iface }}"
+{{ router.external_name }}="{{ router.address }}"
 {% endfor %}
 
 # Internal ips
@@ -30,30 +26,30 @@ iptables -t mangle -X
 iptables -A INPUT -i lo -p all -j ACCEPT
 iptables -A OUTPUT -o lo -p all -j ACCEPT
 
-{% for vlan in router_iface_external %}
-iptables -A INPUT -p all -s localhost -i {{vlan.iface}} -j DROP
+{% for router in router_configuration %}
+iptables -A INPUT -p all -s localhost -i {{router.iface}} -j DROP
 {% endfor %}
 
 # Drop all internal traffic coming
 iptables -A INPUT -s 127.0.0.0/8 -j REJECT
 
-{% for external  in external_ip %}
-iptables -A INPUT -s ${{ external.name }}/32 -j DROP
+{% for router  in router_configuration %}
+iptables -A INPUT -s ${{ router.name }}/32 -j DROP
 {% endfor %}
 
 # Accept all established inbound traffic
 iptables -A INPUT -m state --state RELATED,ESTABLISHED -m limit --limit 50/second --limit-burst 50 -j ACCEPT 
 
 # Allow ping and limit
-iptables -A INPUT -p icmp -m limit --limit 4/second --limit-burst 4 -j ACCEPT
+iptables -A INPUT -p icmp -m limit --limit 10/second --limit-burst 10 -j ACCEPT
 
 # Allow outbound traffic
 iptables -A OUTPUT -j ACCEPT
 
 # Forward port on each interface
-{% for external in external_ip %}
-{% if port is defined %}
-iptables -A INPUT -p tcp -i ${{ external.name }} --dport {{ ports.port }} -j ACCEPT
+{% for router in router_configuration %}
+{% if exposed_port is defined %}
+iptables -A INPUT -p tcp -i ${{ router.name }} --dport {{ router.exposed_port }} -j ACCEPT
 {% endif %}
 {% endfor %}
 
@@ -71,17 +67,17 @@ iptables -A INPUT -p tcp --dport 22 -m state --state NEW -m recent --set
 iptables -A INPUT -p tcp --dport 22 -m state --state NEW -m recent --update --seconds 60 --hitcount 8 -j DROP
 
 # prevent port scan
-{% for ip in external_ip %}
-iptables -A INPUT -i {{ ip }} -p tcp -m tcp --tcp-flags FIN,SYN,RST,PSH,ACK,URG NONE -j DROP
-iptables -A INPUT -i {{ ip }} -p tcp -m tcp --tcp-flags FIN,SYN FIN,SYN -j DROP
-iptables -A INPUT -i {{ ip }} -p tcp -m tcp --tcp-flags SYN,RST SYN,RST -j DROP
-iptables -A INPUT -i {{ ip }} -p tcp -m tcp --tcp-flags FIN,RST FIN,RST -j DROP
-iptables -A INPUT -i {{ ip }} -p tcp -m tcp --tcp-flags FIN,ACK FIN -j DROP
-iptables -A INPUT -i {{ ip }} -p tcp -m tcp --tcp-flags ACK,URG URG -j DROP
-iptables -A INPUT -i {{ ip }} -p tcp -m state --state NEW -m state --state NEW -m recent --set
-iptables -A INPUT -i {{ ip }} -p tcp -m state --state NEW -m recent --update --seconds 30 --hitcount 10 -j DROP
-iptables -A FORWARD -i {{ ip }} -p tcp -m state --state NEW -m recent --set
-iptables -A FORWARD -i {{ ip }} -p tcp -m state --state NEW -m recent --update --seconds 30 --hitcount 10 -j DROP
+{% for router in router_configuration %}
+iptables -A INPUT -i {{ router.iface }} -p tcp -m tcp --tcp-flags FIN,SYN,RST,PSH,ACK,URG NONE -j DROP
+iptables -A INPUT -i {{ router.iface }} -p tcp -m tcp --tcp-flags FIN,SYN FIN,SYN -j DROP
+iptables -A INPUT -i {{ router.iface }} -p tcp -m tcp --tcp-flags SYN,RST SYN,RST -j DROP
+iptables -A INPUT -i {{ router.iface }} -p tcp -m tcp --tcp-flags FIN,RST FIN,RST -j DROP
+iptables -A INPUT -i {{ router.iface }} -p tcp -m tcp --tcp-flags FIN,ACK FIN -j DROP
+iptables -A INPUT -i {{ router.iface }} -p tcp -m tcp --tcp-flags ACK,URG URG -j DROP
+iptables -A INPUT -i {{ router.iface }} -p tcp -m state --state NEW -m state --state NEW -m recent --set
+iptables -A INPUT -i {{ router.iface }} -p tcp -m state --state NEW -m recent --update --seconds 30 --hitcount 10 -j DROP
+iptables -A FORWARD -i {{ router.iface }} -p tcp -m state --state NEW -m recent --set
+iptables -A FORWARD -i {{ router.iface }} -p tcp -m state --state NEW -m recent --update --seconds 30 --hitcount 10 -j DROP
 {% endfor %}
 
 iptables -N PORT_SCANNING
@@ -102,22 +98,24 @@ iptables -A INPUT -i $AD -p udp -j DROP
 iptables -A OUTPUT -o $AD -p udp -j DROP
 
 # Routing
-{% for external in external_ip %}
-{% if port is defined %}
-iptables -t nat -A PREROUTING -d {{ external.address }} -p tcp --dport {{ external.port }} -j DNAT --to-destination {{ external.internal }}:{{ external.port }}
-iptables -t nat -A POSTROUTING -s {{ external.address }} -p tcp --sport {{ external.port }} -j SNAT --to {{ external.address }}:{{ external.port }}
+{% for router in router_configuration %}
+{% if exposed_port is defined %}
+iptables -t nat -A PREROUTING -d {{ router.address }} -p tcp --dport {{ router.exposed_port }} -j DNAT --to-destination {{ router.internal }}:{{ router.exposed_port }}
+iptables -t nat -A POSTROUTING -s {{ router.address }} -p tcp --sport {{ router.exposed_port }} -j SNAT --to {{ router.address }}:{{ router.exposed_port }}
 {% endif %}
 {% endfor %}
 
-{% for vlan in router_iface_external %}
-iptables -A FORWARD -i eth1 -o {{ vlan.iface }} -j ACCEPT
-iptables -A FORWARD -i {{ vlan.iface }} -o eth1 -m state --state RELATED,ESTABLISHED -j ACCEPT
-iptables -t nat -A POSTROUTING -o {{ vlan.iface }} -j MASQUERADE
+{% for router in router_configuration %}
+iptables -A FORWARD -i eth1 -o {{ router.iface }} -j ACCEPT
+iptables -A FORWARD -i {{ router.iface }} -o eth1 -m state --state RELATED,ESTABLISHED -j ACCEPT
+iptables -t nat -A POSTROUTING -o {{ router.iface }} -j MASQUERADE
 {% endfor %}
 
 
 #Nflog sending packets to IDS rules; needs nflog installed first
-iptables -I INPUT -i $WEB -j NFLOG --nflog-group 0 --nflog-range 65535
+{% for router in router_configuration %}
+iptables -I INPUT -i {{ router.iface }} -j NFLOG --nflog-group 0 --nflog-range 65535
+{% endfor %}
 nflog-zmq-send 0,1 tcp://$IIDS:10000
 
 # Logging
