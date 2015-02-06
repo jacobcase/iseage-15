@@ -1,0 +1,3 @@
+- name : splunk setup
+  notify: splunk_boot
+  notify: splunk_forward
