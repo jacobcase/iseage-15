@@ -1,0 +1,11 @@
+sudo git clone https/github.com/trentn/powerbroker-iseage15.git
+cd powerbroker-iseage15
+sudo chmod a+x pbis-open * 						#whatever the shell script name is
+sudo ./pbis-open*
+sudo domainjoin-cli join team4.isucdc.com steff 			#admin account, enter password on prompt
+									#server should be on the windows domain at this point
+
+sudo /opt/pbis/bin/config --file PowerBrokerConfig 			#Should be close to the name
+									#Only domain admins and itpersonnel can log in (no need to add domain name on login either)
+
+# add %TEAM4\\domain^admins to sudoers file	
