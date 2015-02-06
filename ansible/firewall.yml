@@ -3,4 +3,4 @@
   sudo: yes
   roles:
   - router
-
+  - nflog
