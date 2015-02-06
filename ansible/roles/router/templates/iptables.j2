@@ -57,7 +57,7 @@ iptables -A INPUT -p tcp -i {{ router.iface }} --dport {{ port }} -j ACCEPT
 
 {% for router in router_configuration %}
 {% if router.exposed_udp is defined %}
-{% for port in router.exposed_port %}
+{% for port in router.exposed_udp %}
 iptables -A INPUT -p udp -i {{ router.iface }} --dport {{ port }} -j ACCEPT
 {% endfor %}
 {% endif %}
@@ -120,7 +120,7 @@ iptables -t nat -A POSTROUTING -s {{ router.internal }} -p tcp --sport {{ port }
 
 {% for router in router_configuration %}
 {% if router.exposed_udp is defined %}
-{% for port in router.exposed_port %}
+{% for port in router.exposed_udp %}
 iptables -t nat -A PREROUTING -d {{ router.address }} -p udp --dport {{ port }} -j DNAT --to-destination {{ router.internal }}:{{ port }}
 iptables -t nat -A POSTROUTING -s {{ router.internal }} -p udp --sport {{ port }} -j SNAT --to {{ router.address }}:{{ port }}
 {% endfor %}

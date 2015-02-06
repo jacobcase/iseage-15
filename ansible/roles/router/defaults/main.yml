@@ -11,6 +11,7 @@ router_configuration:
     internal: 192.168.1.50
     exposed_port:
     - 80
+    - 22
     internal_port:
     - 80
     
@@ -38,6 +39,8 @@ router_configuration:
     - 3389
     internal_port:
     - 3389
+    exposed_udp:
+    - 3389
     
   - name: WEB2
     iface: eth0:1
@@ -47,6 +50,7 @@ router_configuration:
     internal: 192.168.1.110
     exposed_port:
     - 80
+    - 22
     internal_port:
     - 80
   - name: MASTER
