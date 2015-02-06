@@ -4,10 +4,10 @@
 - name: install libnetfilter-log1
   apt: name=libnetfilter-log1 state=present
 
-- name: install libzmq1
+- name: install libzmq3
   apt: name=libzmq1 state=present
 
-- name: install libzmq-dev
+- name: install libzmq3-dev
   apt: name=libzmq-dev state=present
 
 - name: install python-dev
@@ -28,3 +28,10 @@
     - reload iptables
   tags:
     - iptables
+    
+- name: configure network
+  template: src=interfaces.j2 dest=/etc/network/interfaces mode=0644
+  notify:
+    - reload network
+  tags:
+   - network

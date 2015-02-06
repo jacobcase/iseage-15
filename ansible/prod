@@ -1,0 +1,1 @@
+firewall    ansible_ssh_port=22 ansible_ssh_user=cdc ansible_ssh_host=192.168.1.254

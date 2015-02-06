@@ -1,0 +1,8 @@
+- name: splunk_boot
+  command:  /opt/splunk/forwarder/bin/splunk enable boot-start
+- name: splunk forward
+  command: /opt/splunkforwarder/bin/splunk add forward-server {{ splunk_host }}:{{ splunk_port }}
+- name: logfile1
+  command: /opt/splunkforwarder/bin/splunk add monitor /var/log/syslog -index main -sourcetype syslog
+- name: logfile2
+  command: /opt/splunkforwarder/bin/splunk add monitor /var/log/auth.log -index main -sourcetype auth
