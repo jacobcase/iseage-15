@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}User Summary{% endblock %}
+{% block content %}
+	<h2>Summary of {{ user_info[0][1] }}'s Holdings </h2>
+  <p><em>Brokerage Balance: {{ user_info[0][3] }}</em></p>
+	<p>Password: {{ user_info[0][2] }}</p>
+	<form action="user?name={{ user_info[0][1] }}" method="post">
+		<p>New Password:  <input type="text" name="password"></p>
+		<p><input type="submit"></p>
+	</form>
+	<form action="user?name={{ user_info[0][1] }}" method="post">
+		{% if user_info[0][4] == 1 %}
+		<p>Admin:  <input type="checkbox" name="admin" checked="true">
+		{% else %}
+		<p>Admin:  <input type="checkbox" name="admin">
+		{% endif %}
+		<input type="submit"></p>
+	</form>
+	<form action="user?name={{ user_info[0][1] }}" method="post">
+		<input type="hidden" name="action" value="drop">
+		<input type="submit" value="Remove User">
+	</form>
+	<table>
+	<tr><td>Stock Name</td><td>Amount Owned</td><td>Stock Symbol</td><td>Stock Price</td></tr>
+	{% for stock in stock_holdings %}
+		<tr><td>{{ stock[2]}}</td><td>{{ stock[3] }}</td><td>{{ stock[0] }}</td><td>{{ stock[1] }}</td></tr>
+	{% endfor %}
+	</table>
+{% endblock %}  

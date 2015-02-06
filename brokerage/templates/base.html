@@ -1,0 +1,26 @@
+{% autoescape false %}
+<!DOCTYPE html>
+<head>
+	<link rel="stylesheet" type="text/css" href={{ url_for('static', filename='bootstrap/css/bootstrap.min.css') }}>
+	<title> {% block title %}{% endblock %} - CDC Investments </title>
+</head>
+<body role="document">
+<nav class="navbar navbar-inverse navbar-fixed-top" style="background-color: #67a7c3">
+<div class="container" style="margin-left: 4em">
+<h2>CDC Investments</h2>
+<div id="navbar" class="navbar">
+	<ul class="nav navbar-nav" style="background-color: #67a7c3;">
+		{% if not admin %}
+			<li><a href="/home" style="color: black;">Home</a></li>
+		{% endif %}
+		{% if admin %}
+			<li><a href="/admin" style="color: black;">Admin Home</a></li>
+		{% endif %}
+		<li><a href="/logout" style="color: black;">Logout</a></li>
+	</ul>
+</div>
+</div>
+</nav>
+<div id="content"><div class="container" role="main" style="margin-left: 4em; margin-top: 7em">{% block content %}{% endblock %}</div></div>
+</body>
+{% endautoescape %}

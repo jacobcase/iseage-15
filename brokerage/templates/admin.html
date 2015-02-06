@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Admin{% endblock %}
+{% block content %}
+<div style="float: left; width: 50%">
+	<form action="/admin" method="post">
+		<h4>New User</h4>
+		<p>Username:  <input type="text" name="username"></p>
+		<p>Password:  <input type="text" name="password"></p>
+		<p>Opening Balance:  <input type="number" name="balance" step="0.01"></p>
+		<p>Admin:  <input type="checkbox" name="admin"></p>
+		<p><input type="submit">
+	</form>
+	<h2> Users </h2>
+	<p>Click on user to view and edit.</p>
+	<table>
+	{% for user in users %}
+		<tr><td><a href="/user?name={{ user[1] }}">{{ user[1] }}</a></td></tr>
+	{% endfor %}
+	</table>
+</div>
+<div>
+<h4>Add Stock</h4>
+<form action="/admin" method="post">
+<p>Company:  <input type="text" name="company"></p>
+<p>Symbol:  <input type="text" name="symbol"></p>
+<p>Price:  <input type="number" step="0.01" name="price"</p>
+<p><input type="submit"></p>
+</form>
+
+<h4>Existing Stock</h4>
+<p>Click on stock name to edit.</p>
+<table>
+<tr><td><b><u> Name </u></b></td><td><b><u> Symbol </u></b></td><td><b><u> Price </u></b></td></tr>
+{% for stock in stocks %}
+<tr><td><a href="/stock?name={{ stock[3] }}">{{ stock[3] }}</a></td><td>{{ stock[1] }}</td><td>{{ stock[2] }}</td></tr>
+{% endfor %}
+</table>
+
+</div>
+{% endblock %}

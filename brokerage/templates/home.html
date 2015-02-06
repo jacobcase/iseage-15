@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block title %}Home{% endblock %}
+{% block content %}
+		<h2>Welcome, {{ user_info[0][1] }}!</h2>
+	<div style="float:left; width:50%">
+		<p><em>Brokerage Balance: <span id="balance">{{ user_info[0][3] }}</span></em></p>
+
+		<h3>Stock Holdings</h3>
+		<table>
+			<tr><td><b><u> Stock Name </b></u></td><td><b><u> Amount Owned </b></u></td><td><b><u> Stock Symbol </b></u></td><td><b><u> Stock Price </b></u></td></tr>
+		{% for stock in stock_holdings %}
+			<tr><td>{{ stock[2] }}</td><td id="my_{{ stock[0] }}">{{ stock[3] }}</td><td>{{ stock[0] }}</td><td>{{ stock[1] }}</td></tr>
+		{% endfor %}
+		</table>
+
+		<form method="post" action="/home">
+		<h4>Buy Stock</h4>
+		<p>Stock Symbol:  <input onchange="updateCost()" id="symbol" type="text" name="symbol" /></p>
+		<p>Number:        <input onchange="updateCost()" type="number" id="number"  name="number" value="0" /></p>
+		<input type="hidden" name="action" value="buy">
+		<p>Cost:          <span id="cost">0</span>    <input type="submit"></p>
+		<p style="color: red;" id="buy_error"></p>
+		</form>
+
+		<form method="post" action="/home">
+		<h4>Sell Stock</h4>
+		<p>Stock Symbol:  <input onchange="updateTotal()" id="symbol2" type="text" name="symbol2" /></p>
+		<p>Number:        <input onchange="updateTotal()" type="number" id="number2"  name="number2" value="0" /></p>
+		<input type="hidden" name="action" value="sell">
+		<p>Total:          <span id="total">0</span>    <input type="submit"></p>
+		<p style="color: red;" id="sell_error"></p>
+		</form>
+
+	</div>
+
+		<div>
+			<h4>Stock Prices</h4>
+			<table>
+				<tr><td><b><u> Stock Name </u></b></td><td><b><u> Stock Price </u></b></td><td><b><u> Stock Symbol </u></b></td></tr>
+				{% for stock in stocks %}
+					<tr><td>{{ stock[3] }}</td><td id="{{ stock[1] }}">{{ stock[2] }}</td><td>{{ stock[1] }}</td></tr>
+				{% endfor %}
+		</div>
+<script type="text/javascript">
+	function updateCost() {
+		var symbol = document.getElementById("symbol").value;
+		var n = document.getElementById("number").value;
+		var cost = document.getElementById(symbol);
+		var balance = document.getElementById("balance").innerHTML;
+		if (cost == null) {
+			document.getElementById("cost").innerHTML = 0;
+			document.getElementById("buy_error").innerHTML = "Invalid symbol.";
+		} else {
+			cost = cost.innerHTML;
+			document.getElementById("cost").innerHTML = cost*n;
+			if ((cost * n) >  balance) {
+				document.getElementById("buy_error").innerHTML = "You do not have enough money to buy those stock."
+			} else {
+				document.getElementById("buy_error").innerHTML = " ";
+			}
+		}
+	}
+
+	function updateTotal() {
+		var symbol = document.getElementById("symbol2").value;
+		var n = document.getElementById("number2").value;
+		var price = document.getElementById(symbol);
+		var totalElement = document.getElementById("total");
+		var sellErrorElement = document.getElementById("sell_error");
+		if (price == null) {
+			sellErrorElement.innerHTML = "Invalid symbol";
+			totalElement.innerHTML = 0;			
+		} else {
+			price = price.innerHTML;
+			var amountOwned = document.getElementById("my_"+symbol).innerHTML;
+			if (parseInt(n) > parseInt(amountOwned)) {
+				sellErrorElement.innerHTML = "You do not own that many shares."
+			} else {
+				sellErrorElement.innerHTML = "";
+			}
+			totalElement.innerHTML = price*n;
+		}
+	}
+</script>
+{% endblock %}  
