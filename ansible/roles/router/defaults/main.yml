@@ -8,7 +8,7 @@ router_configuration:
     external_name: EWEB
     internal_name: IWEB
     address: 200.2.96.50
-    internal: 192.169.1.50
+    internal: 192.168.1.50
     exposed_port:
     - 80
     internal_port:
@@ -20,6 +20,13 @@ router_configuration:
     internal_name: IAD
     address: 200.2.96.40
     internal: 192.168.1.40
+    exposed_port:
+    - 389
+    - 3268
+    exposed_udp:
+    - 53
+    - 389
+    - 3268
     
   - name: RDP
     iface: eth0:2
@@ -42,6 +49,16 @@ router_configuration:
     - 80
     internal_port:
     - 80
+  - name: MASTER
+    iface: eth0:3
+    external_name: EMASTER
+    internal_name: IMASTER
+    address: 200.2.96.100
+    internal: 192.168.1.100
+    exposed_port:
+    - 22
+    internal_port:
+    - 22
 
 internal_ip:
   - name: IDS

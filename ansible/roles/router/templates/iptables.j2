@@ -55,6 +55,15 @@ iptables -A INPUT -p tcp -i {{ router.iface }} --dport {{ port }} -j ACCEPT
 {% endif %}
 {% endfor %}
 
+{% for router in router_configuration %}
+{% if router.exposed_udp is defined %}
+{% for port in router.exposed_port %}
+iptables -A INPUT -p udp -i {{ router.iface }} --dport {{ port }} -j ACCEPT
+{% endfor %}
+{% endif %}
+{% endfor %}
+
+
 # Forward ssh
 iptables -A INPUT -p tcp --dport 22 -j ACCEPT
 
@@ -104,10 +113,21 @@ iptables -A OUTPUT -o $AD -p udp -j DROP
 {% if router.exposed_port is defined %}
 {% for port in router.exposed_port %}
 iptables -t nat -A PREROUTING -d {{ router.address }} -p tcp --dport {{ port }} -j DNAT --to-destination {{ router.internal }}:{{ port }}
-iptables -t nat -A POSTROUTING -s {{ router.address }} -p tcp --sport {{ port }} -j SNAT --to {{ router.address }}:{{ port }}
+iptables -t nat -A POSTROUTING -s {{ router.internal }} -p tcp --sport {{ port }} -j SNAT --to {{ router.address }}:{{ port }}
 {% endfor %}
 {% endif %}
 {% endfor %}
+
+{% for router in router_configuration %}
+{% if router.exposed_udp is defined %}
+{% for port in router.exposed_port %}
+iptables -t nat -A PREROUTING -d {{ router.address }} -p udp --dport {{ port }} -j DNAT --to-destination {{ router.internal }}:{{ port }}
+iptables -t nat -A POSTROUTING -s {{ router.internal }} -p udp --sport {{ port }} -j SNAT --to {{ router.address }}:{{ port }}
+{% endfor %}
+{% endif %}
+{% endfor %}
+
+
 
 {% for router in router_configuration %}
 iptables -A FORWARD -i eth1 -o {{ router.iface }} -j ACCEPT
