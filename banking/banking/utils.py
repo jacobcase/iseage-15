@@ -2,6 +2,7 @@ from banking import signer
 from flask import session, Response, make_response
 from banking.db import User, Transaction, DB
 from itsdangerous import BadSignature
+import logging
 
 class UserNotFoundError(Exception):
     def __init__(self, message):

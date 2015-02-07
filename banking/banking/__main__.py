@@ -6,7 +6,7 @@ from tornado.ioloop import IOLoop
 from banking import app
 
 SESSION_KEY = "1234"
-PORT = 5000
+PORT = 80
 
 
 if __name__ != '__main__':

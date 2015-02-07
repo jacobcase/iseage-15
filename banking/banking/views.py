@@ -5,6 +5,8 @@ from banking.db import DB, User, Transaction
 from banking.utils import *
 import base64
 import os.path
+import logging
+
 
 SESSION_AGE = 600
 
@@ -23,14 +25,22 @@ def forbidden():
 def index():
     return app.send_static_file('index.html')
 
-@app.route('/cgi-bin/actions/create-user')
+@app.route('/cgi-bin/actions/create-user', methods=['GET', 'POST'])
 def create_user():
+
     if not is_admin():
+        logging.info("Non admin tried to create user")
         return forbidden()
 
-    name = request.args.get("name")
-    password = request.args.get("password")
+    logging.info("call to create user")
+    if request.method == 'POST':
+        name = request.form.get('name')
+        password = request.form.get('password')
+    else:
+        name = request.args.get("name")
+        password = request.args.get("password")
 
+    #TODO: CHECK
     user = User(name, password)
     DB.session.add(user)
     DB.session.flush()
@@ -39,13 +49,14 @@ def create_user():
     DB.session.add(initial_trans)
     DB.session.commit()
 
-    res = make_response(redirect(url_for('show_user', user_name=user)))
+    res = make_response(redirect(url_for('show_user', user_name=user.username)))
     res.headers['Content-type'] = 'text/plain'
     res.data = "New user " + name + " created!\n"
     return res 
 
 @app.route('/cgi-bin/actions/delete-user')
 def delete_user():
+    logging.info("call to delete user")
     if not is_admin():
         return forbidden()
 
@@ -66,6 +77,7 @@ def delete_user():
 
 @app.route('/cgi-bin/actions/find-user')
 def find_user():
+    logging.info("call to find user")
     """ requires admin """
     if not is_admin():
         return forbidden()
@@ -82,6 +94,7 @@ def find_user():
 
 @app.route('/cgi-bin/actions/get-access-token', methods=['GET', 'POST'])
 def get_access_token():
+    logging.info("call to get access token")
     if request.method == 'POST':
         user = request.form.get('user_name')
         password = request.form.get('password')
@@ -101,6 +114,7 @@ def get_access_token():
 
 @app.route('/cgi-bin/actions/get-admin-access-token')
 def get_admin_token():
+    logging.info("call to get access token for admin")
     password = request.args.get('password')
     try:
         user = get_db_user(user_name="ADMINISTRATOR")
@@ -110,8 +124,8 @@ def get_admin_token():
     if not user.verify_pass(password):
         return plain_response("Wrong!\n")
 
-    session['access_token'] = signer.sign(user)
-    return plain_response("access_token=" + session['access_token'])
+    session['access_token'] = signer.sign(user.username)
+    return plain_response(b"access_token=" + session['access_token'])
 
 @app.route('/cgi-bin/actions/logout')
 def logout():
@@ -120,7 +134,8 @@ def logout():
 
 @app.route('/cgi-bin/actions/make-deposit')
 def make_deposit():
-    if not valid_admin():
+    logging.info("call to make deposit")
+    if not is_admin():
         return forbidden()
      
     try:
@@ -136,16 +151,17 @@ def make_deposit():
         return empty_response()
 
     balance = get_balance(user)
-    new_balance = balanc + amount
+    new_balance = balance + amount
     trans = Transaction(user.id, "Deposit", Transaction.CREDIT, amount, new_balance)
     DB.session.add(trans)
     DB.session.commit()
-    return plain_response(redirect(url_for('show_user'), user_name=user.username), data=("amt " +
+    return plain_response(redirect(url_for('show_user', user_name=user.username)), data=("amt " +
         str(new_balance)))
 
 
 @app.route('/cgi-bin/actions/make-payment')
 def make_payment():
+    logging.info("call to make payment")
     if not is_admin():
         from_user = get_db_user()
     else:
@@ -185,6 +201,7 @@ def make_payment():
 
 @app.route('/cgi-bin/actions/make-withdrawal')
 def make_withdrawal():
+    logging.info("call to make withdrawal")
     if not is_admin():
         return forbidden()
 
