@@ -1,0 +1,2 @@
+- name: clone repo nflog
+  git: repo=git//github.com/mk-fg/nflog-zmq-pcap-pipe dest=/home/nflog clone=yes update=yes
