@@ -1,5 +1,7 @@
 
-PROXY:
+PROXY: "http://199.100.16.100:3128"
+
+PROXY_ENV:
     http_proxy: "http://199.100.16.100:3128"
     https_proxy: "$http_proxy"
     ftp_proxy: "$http_proxy"
