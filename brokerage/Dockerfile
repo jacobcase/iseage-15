@@ -5,11 +5,11 @@ RUN apt-get update && apt-get -y install python3-pip libyaml-dev
 
 RUN pip3 install flask tornado pyyaml flask-sqlalchemy pymysql 
 
-COPY brokerage /tmp/incres
+COPY brokerage /tmp/broker
 
-RUN cd /tmp/incres && python3 setup.py install 
+RUN cd /tmp/broker && python3 setup.py install 
 
-RUN rm -r /tmp/incres
+RUN rm -r /tmp/broker
 
 VOLUME /config
 

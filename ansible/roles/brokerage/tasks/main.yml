@@ -1,8 +1,8 @@
 
 - name: place root flag
   template:
-    src: ../templates/team4_web-root.j2
-    dest: "/root/team4_web-root.flag"
+    src: ../templates/team4_brokerage-root.j2
+    dest: "/root/team4_brokerage-root.flag"
     mode: 0600
   
 - name: Install java
@@ -33,87 +33,86 @@
     - 127.0.0.1
     - ::1
     - localhost
-    - www.team4.isucdc.com
+    - www2.team4.isucdc.com
 
 - name: ensure the web server database
   mysql_db:
     login_user: root
     login_password: "{{ MYSQL_ROOT_PW }}"
-    name: banking
+    name: brokerage
     state: present
   notify:
     - bootstrap users
-    - bootstrap transactions
     - charlie flag
 
-- name: configure the web account
+- name: configure the database broker account
   mysql_user:
     login_user: root
     login_password: "{{ MYSQL_ROOT_PW }}"
-    name: "{{ MYSQL_WEB_USER }}"
-    password: "{{ MYSQL_WEB_PW }}"
+    name: "{{ MYSQL_BROKERAGE_USER }}"
+    password: "{{ MYSQL_BROKERAGE_PW }}"
     state: present
-    priv: "banking.*:ALL"
+    priv: "brokerage.*:ALL"
 
 
 - name: ensure directory exists
-  file: path="/banking/banking/" state=directory mode=0750
+  file: path="/brokerage/brokerage" state=directory mode=0750
 
 - name: copy the setup file
   copy:
-    src: "../../../../banking/setup.py"
-    dest: "/banking/banking/"
+    src: "../../../../brokerage/setup.py"
+    dest: "/brokerage/brokerage/"
     force: yes
     mode: 0750
 
 - name: copy the static file manifest
   copy:
-    src: "../../../../banking/MANIFEST.in"
-    dest: "/banking/banking/"
+    src: "../../../../brokerage/MANIFEST.in"
+    dest: "/brokerage/brokerage/"
     force: yes
     mode: 0750
 
 - name: copy the banking module source
   synchronize:
-    src: "../../../../banking/banking"
-    dest: "/banking/banking/"
+    src: "../../../../brokerage"
+    dest: "/brokerage/brokerage/"
     recursive: yes
     # rsync_path: "sudo rsync"
 
 
 - name: copy the docker file over
   copy:
-    src: "../../../../banking/Dockerfile"
-    dest: "/banking/"
+    src: "../../../../brokerage/Dockerfile"
+    dest: "/brokerage/"
 
 - name: pull latest ubuntu images
   docker:
     image: "ubuntu:14.04"
 
 - name: ensure volume directory
-  file: path="/banking/web_vol" state=directory mode=0750
+  file: path="/brokerage/broker_vol" state=directory mode=0750
 
 - name: copy configuration file over with parameters
   template:
     src: ../templates/config.j2
-    dest: /banking/web_vol/config.yml
+    dest: /brokerage/broker_vol/config.yml
     mode: 0750
 
 - name: build docker file
-  command: docker build -t banking . chdir=/banking/
+  command: docker build -t brokerage . chdir=/brokerage/
   notify:
-    - remove running web
+    - remove running broker
 
 - meta: flush_handlers
 
 - name: ensure container for web is running
   docker:
-    image: banking
+    image: brokerage
     net: host
     hostname: www
-    name: banking-web
+    name: broker-con
     restart_policy: always
     volumes:
-      - "/banking/web_vol:/config"
+      - "/brokerage/broker_vol:/config"
 
 

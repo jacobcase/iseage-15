@@ -1,0 +1,9 @@
+---
+# file: site.yml
+# sets up the entire system
+- hosts: brokerage
+  remote_user: root
+  roles:
+    - common
+    - docker
+    - brokerage
