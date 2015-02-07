@@ -1,0 +1,119 @@
+
+- name: place root flag
+  template:
+    src: ../templates/team4_web-root.j2
+    dest: "/root/team4_web-root.flag"
+    mode: 0600
+  
+- name: Install java
+  apt: name=openjdk-7-jdk
+
+- name: Install python mysql required library
+  apt: name=python-mysqldb
+
+- name: Install mysql
+  apt: name=mysql-server
+
+- name: make sure mysql is running
+  service:
+    name: mysql
+    state: started
+    enabled: true
+
+- name: configure the root accounts
+  mysql_user:
+    name: root
+    host: "{{ item }}"
+    password: "{{ MYSQL_ROOT_PW }}"
+    login_user: root
+    login_password: "{{ MYSQL_ROOT_PW }}"
+    check_implicit_admin: yes
+    priv: "*.*:ALL,GRANT"
+  with_items:
+    - 127.0.0.1
+    - ::1
+    - localhost
+    - www.team4.isucdc.com
+
+- name: ensure the web server database
+  mysql_db:
+    login_user: root
+    login_password: "{{ MYSQL_ROOT_PW }}"
+    name: banking
+    state: present
+  notify:
+    - bootstrap users
+    - bootstrap transactions
+    - charlie flag
+
+- name: configure the web account
+  mysql_user:
+    login_user: root
+    login_password: "{{ MYSQL_ROOT_PW }}"
+    name: "{{ MYSQL_WEB_USER }}"
+    password: "{{ MYSQL_WEB_PW }}"
+    state: present
+    priv: "banking.*:ALL"
+
+
+- name: ensure directory exists
+  file: path="/banking/banking/" state=directory mode=0750
+
+- name: copy the setup file
+  copy:
+    src: "../../../../banking/setup.py"
+    dest: "/banking/banking/"
+    force: yes
+    mode: 0750
+
+- name: copy the static file manifest
+  copy:
+    src: "../../../../banking/MANIFEST.in"
+    dest: "/banking/banking/"
+    force: yes
+    mode: 0750
+
+- name: copy the banking module source
+  synchronize:
+    src: "../../../../banking/banking"
+    dest: "/banking/banking/"
+    recursive: yes
+    # rsync_path: "sudo rsync"
+
+
+- name: copy the docker file over
+  copy:
+    src: "../../../../banking/Dockerfile"
+    dest: "/banking/"
+
+- name: pull latest ubuntu images
+  docker:
+    image: "ubuntu:14.04"
+
+- name: ensure volume directory
+  file: path="/banking/web_vol" state=directory mode=0750
+
+- name: copy configuration file over with parameters
+  template:
+    src: ../templates/config.j2
+    dest: /banking/web_vol/config.yml
+    mode: 0750
+
+- name: build docker file
+  command: docker build -t banking . chdir=/banking/
+  notify:
+    - remove running web
+
+- meta: flush_handlers
+
+- name: ensure container for web is running
+  docker:
+    image: banking
+    net: host
+    hostname: www
+    name: banking-web
+    restart_policy: always
+    volumes:
+      - "/banking/web_vol:/config"
+
+
