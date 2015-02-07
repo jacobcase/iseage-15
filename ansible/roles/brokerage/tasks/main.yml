@@ -74,7 +74,7 @@
 
 - name: copy the banking module source
   synchronize:
-    src: "../../../../brokerage"
+    src: "../../../../brokerage/brokerage"
     dest: "/brokerage/brokerage/"
     recursive: yes
     # rsync_path: "sudo rsync"

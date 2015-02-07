@@ -1,0 +1,2 @@
+recursive-include brokerage/templates *
+recursive-include brokerage/static *

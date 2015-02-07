@@ -1,8 +1,8 @@
 
-- name: remove running web
+- name: remove running broker
   docker:
-    image: banking
-    name: banking-web
+    image: brokerage
+    name: broker-con
     state: absent
 
 - name: bootstrap users
