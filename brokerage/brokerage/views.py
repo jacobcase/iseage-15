@@ -27,8 +27,8 @@ def login():
 		user = authorize()
 			
 	if request.method == 'POST':
-        	username = request.form.get('username')
-        	password = request.form.get('password')
+		username = request.form.get('username')
+		password = request.form.get('password')
 		user = authenticate(username, password)
 		session['name'] = signer.sign(user.username)
 
@@ -38,7 +38,7 @@ def login():
 		else:
 			return redirect(url_for("home"))
 
-	return render_template('login.html')  	
+	return render_template('login.html')	
 
 @app.route("/admin", methods=['GET', 'POST'])
 def admin():
@@ -70,7 +70,7 @@ def admin():
 
 	result = User.query()
 	stocks = Stock.query()
-		query_db("SELECT * FROM prices;")
+	query_db("SELECT * FROM prices;")
 	return render_template('admin.html', users = result, stocks=stocks, admin=user.isAdmin())
 
 @app.route("/user", methods=['GET', 'POST']) #check this function for password change vulnerarbility
