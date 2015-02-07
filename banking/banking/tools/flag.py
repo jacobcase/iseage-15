@@ -12,7 +12,7 @@ flag = args.flag
 
 user = User.query.filter_by(username="Charlie").first()
 
-trans = Transaction.query.order_by(Transaction.id).first()
+trans = Transaction.query.filter_by(user_id=user.id).order_by(Transaction.id).first()
 
 trans.flag = flag
 
