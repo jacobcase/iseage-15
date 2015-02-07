@@ -12,6 +12,7 @@ from logging import FileHandler
 import base64
 import os.path
 
+import pdb
 
 @app.route("/")
 def home():
@@ -50,7 +51,7 @@ def admin():
             username = request.form['username']
             password = request.form['password']
             balance = request.form['balance']
-            admin = request.form['admin']
+            admin = True if 'admin' in request.form else False
 
             new_user = User(username,password,balance,admin)
             DB.session.add(user)

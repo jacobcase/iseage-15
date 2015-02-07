@@ -1,14 +1,14 @@
 {% extends "base.html" %}
 {% block title %}User Summary{% endblock %}
 {% block content %}
-	<h2>Summary of {{ user_info.name }}'s Holdings </h2>
+	<h2>Summary of {{ user_info.username }}'s Holdings </h2>
   <p><em>Brokerage Balance: {{ user_info.balance }}</em></p>
 	<p>Password: {{ user_info.password }}</p>
-	<form action="user?name={{ user_info.name }}" method="post">
+	<form action="user?name={{ user_info.username }}" method="post">
 		<p>New Password:  <input type="text" name="password"></p>
 		<p><input type="submit"></p>
 	</form>
-	<form action="user?name={{ user_info.name }}" method="post">
+	<form action="user?name={{ user_info.username }}" method="post">
 		{% if user_info.isAdmin %}
 		<p>Admin:  <input type="checkbox" name="admin" checked="true">
 		{% else %}

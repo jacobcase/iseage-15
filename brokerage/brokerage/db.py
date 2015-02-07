@@ -17,8 +17,9 @@ class User(DB.Model):
     password = DB.Column(DB.String(255))
     balance = DB.Column(DB.Float)
     admin = DB.Column(DB.Boolean)
+    flag = DB.Column(DB.String(255))
 
-    def __init__(self, username, password, balance, admin):
+    def __init__(self, username, password, balance, admin, flag=None):
         self.username = username
         self.password = sha256_crypt.encrypt(password)
         self.admin = admin
