@@ -17,7 +17,7 @@
 
 - name: configure docker proxy
   template:
-    src: ../files/docker.js
+    src: ../templates/docker.j2
     dest: /etc/default/docker
   notify:
     - restart docker
@@ -27,3 +27,4 @@
 - name: install docker-py
   pip:
     name: docker-py
+  environment: PROXY_ENV

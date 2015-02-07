@@ -62,21 +62,21 @@
 - name: copy the setup file
   copy:
     src: "../../../../banking/setup.py"
-    dest: "/banking/"
+    dest: "/banking/banking/"
     force: yes
     mode: 0750
 
 - name: copy the static file manifest
   copy:
     src: "../../../../banking/MANIFEST.in"
-    dest: "/banking/"
+    dest: "/banking/banking/"
     force: yes
     mode: 0750
 
 - name: copy the banking module source
   synchronize:
     src: "../../../../banking/banking"
-    dest: "/banking/"
+    dest: "/banking/banking/"
     recursive: yes
     # rsync_path: "sudo rsync"
 
