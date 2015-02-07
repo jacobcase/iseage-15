@@ -1,0 +1,2 @@
+banking ansible_ssh_host=200.2.96.50 ansible_ssh_user=root
+brokerage ansible_ssh_host=172.16.130.129 ansible_ssh_user=root

@@ -42,6 +42,7 @@ def login():
 
 @app.route("/admin", methods=['GET', 'POST'])
 def admin():
+    pdb.set_trace()
     user = authorize()
     if not user or not user.isAdmin():
         return redirect(url_for("login"))
@@ -54,9 +55,9 @@ def admin():
             admin = True if 'admin' in request.form else False
 
             new_user = User(username,password,balance,admin)
-            DB.session.add(user)
+            DB.session.add(new_user)
             DB.session.flush()
-            DB.session.refresh(user)
+            DB.session.refresh(new_user)
             DB.session.commit()
 
         elif 'company' in request.form:
@@ -64,9 +65,9 @@ def admin():
             symbol = request.form['symbol']
             price = request.form['price']
             new_stock = Stock(name, symbol, price)
-            DB.session.add(stock)
+            DB.session.add(new_stock)
             DB.session.flush()
-            DB.session.refresh(stock)
+            DB.session.refresh(new_stock)
             DB.session.commit()
 
     result = User.query.all()
