@@ -14,7 +14,7 @@
 	<p>Click on user to view and edit.</p>
 	<table>
 	{% for user in users %}
-		<tr><td><a href="/user?name={{ user[1] }}">{{ user[1] }}</a></td></tr>
+		<tr><td><a href="/user?name={{ user.name }}">{{ user.name }}</a></td></tr>
 	{% endfor %}
 	</table>
 </div>
@@ -32,7 +32,7 @@
 <table>
 <tr><td><b><u> Name </u></b></td><td><b><u> Symbol </u></b></td><td><b><u> Price </u></b></td></tr>
 {% for stock in stocks %}
-<tr><td><a href="/stock?name={{ stock[3] }}">{{ stock[3] }}</a></td><td>{{ stock[1] }}</td><td>{{ stock[2] }}</td></tr>
+<tr><td><a href="/stock?name={{ stock.name }}">{{ stock.name }}</a></td><td>{{ stock.symbol }}</td><td>{{ stock.price }}</td></tr>
 {% endfor %}
 </table>
 
