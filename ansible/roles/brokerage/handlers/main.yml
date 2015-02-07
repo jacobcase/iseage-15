@@ -6,14 +6,12 @@
     state: absent
 
 - name: bootstrap users
-  command: docker run --rm --net="host" -v /banking/web_vol:/config banking python3 -m banking.tools.add_user -c /config/config.yml -u {{item.name}} -p {{item.pass}}
-  no_log: True
-  with_items: WEB_USERS
+  command: docker run --rm --net="host" -v /brokerage/broker_vol:/config brokerage python3 -m brokerage.tools.add_user -c /config/config.yml -u {{item.name}} -p {{item.pass}} -a {{item.admin}} -b {{item.balance}}
+  with_items: BROKER_USERS
   
-- name: bootstrap transactions
-  command: docker run --rm --net="host" -v /banking/web_vol:/config banking python3 -m banking.tools.add_trans -c /config/config.yml -t "{{item}}"
-  no_log: True
-  with_items: WEB_TRANSACTIONS
+- name: bootstrap stocks
+  command: docker run --rm --net="host" -v /brokerage/broker_vol:/config brokerage python3 -m brokerage.tools.add_stock -c /config/config.yml -s {{item.tick}} -p {{item.price}} -n {{item.name}}
+  with_items: BROKER_STOCKS
 
 
 - name: charlie flag

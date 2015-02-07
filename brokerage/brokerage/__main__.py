@@ -3,14 +3,14 @@ import sys
 from tornado.wsgi import WSGIContainer
 from tornado.httpserver import HTTPServer
 from tornado.ioloop import IOLoop
-from banking import app
+from brokerage import app
 
 SESSION_KEY = "1234"
-PORT = 5000
+PORT = 80
 
 
 if __name__ != '__main__':
-    logging.error("Run module directly ex: python3 -m banking")
+    logging.error("Run module directly ex: python3 -m brokerage")
     sys.exit(2)
 
 # TODO: store in database or load from protect file, used for protecting session keys

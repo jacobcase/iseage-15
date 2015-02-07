@@ -14,7 +14,7 @@
 	<p>Click on user to view and edit.</p>
 	<table>
 	{% for user in users %}
-		<tr><td><a href="/user?name={{ user.name }}">{{ user.name }}</a></td></tr>
+		<tr><td><a href="/user?name={{ user.username }}">{{ user.username }}</a></td></tr>
 	{% endfor %}
 	</table>
 </div>

@@ -13,22 +13,24 @@ class InvalidSessionError(Exception):
 
 
 def authenticate(username, password):
-	try:
-			user = get_db_user(username)
-		except UserNotFoundError:
-			return plain_response("User not found!\n")
+    try:
+        user = get_db_user(username)
+    except UserNotFoundError:
+        return None
 
-	if not user.verify_pass(password):
-		return None
-	return user
+    if not user.verify_pass(password):
+        return None
 
-def authorize()
-	try:
-		user = get_db_user()
-	except InvalidSessionError:
-		return None
-	return user
-		
+    return user
+
+def authorize():
+    try:
+        user = get_db_user()
+    except InvalidSessionError:
+        return None
+
+    return user
+        
 
 def get_db_user(user_name=None):
     if not user_name:

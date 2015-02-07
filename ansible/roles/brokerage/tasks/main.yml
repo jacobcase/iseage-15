@@ -43,7 +43,7 @@
     state: present
   notify:
     - bootstrap users
-    - charlie flag
+    - bootstrap stocks
 
 - name: configure the database broker account
   mysql_user:
