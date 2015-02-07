@@ -1,7 +1,7 @@
 ---
 # file: site.yml
 # sets up the entire system
-- hosts: banking-site
+- hosts: banking
   remote_user: root
   roles:
     - common

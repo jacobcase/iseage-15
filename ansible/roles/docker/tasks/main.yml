@@ -3,6 +3,7 @@
   apt_key:
     keyserver: "hkp://keyserver.ubuntu.com:80"
     id: 36A1D7869245C8950F966E92D8576A8BA88D21E9
+  environment: PROXY_ENV
 
 - name: add docker repo
   apt_repository:
@@ -13,6 +14,15 @@
   apt:
     name: lxc-docker
     state: present
+
+- name: configure docker proxy
+  template:
+    src: ../files/docker.js
+    dest: /etc/default/docker
+  notify:
+    - restart docker
+
+- meta: flush_handlers
 
 - name: install docker-py
   pip:

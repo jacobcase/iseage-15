@@ -5,6 +5,8 @@
     dest: "/root/team4_web-root.flag"
     mode: 0600
   
+- name: Install java
+  apt: name=openjdk-7-jdk
 
 - name: Install python mysql required library
   apt: name=python-mysqldb
@@ -55,22 +57,21 @@
 
 
 - name: ensure directory exists
-  file: path="/banking/banking/" state=directory
-  mode: 0750
+  file: path="/banking/banking/" state=directory mode=0750
 
 - name: copy the setup file
   copy:
     src: "../../../../banking/setup.py"
     dest: "/banking/"
     force: yes
-  mode: 0750
+    mode: 0750
 
 - name: copy the static file manifest
   copy:
     src: "../../../../banking/MANIFEST.in"
     dest: "/banking/"
     force: yes
-  mode: 0750
+    mode: 0750
 
 - name: copy the banking module source
   synchronize:

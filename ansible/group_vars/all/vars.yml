@@ -1,1 +1,8 @@
-public_key: "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC/CE5517CPlSxr+Es2i4GvC4kwKFr706I8vCFzmgA8blI110Rh8XQ/CvJBzMJ45HRuQ0RbZm2vTogqAH9BJLGodbeRoKi0tYrvP+onER076z9qtYWwJL3WcrWQHIVI+7HkPE9BQUTHLFl9fulHxrf0t+6SSqoJOi+7wofwp4riV2zBlse0iil50V4CNRNdPEYdAERLGCO3qvKYYeULPfT/3TsVRH/rSKRybftDzAgkTsPaQym8+JGrcuGWoufZCFmmRf9Ec45ZQd6x13V46TTtY7zcfLrSpcAYC3iSAmqXpG0KdS5PJPBu1Et1xQx06Hyn184WcYii1B3okG4cTjFJ jacob@jacob-mintyfresh"
+
+PROXY:
+    http_proxy: "http://199.100.16.100:3128"
+    https_proxy: "$http_proxy"
+    ftp_proxy: "$http_proxy"
+    HTTP_PROXY: "$http_proxy"
+    HTTPS_PROXY: "$http_proxy"
+    FTP_PROXY: "$http_proxy"
