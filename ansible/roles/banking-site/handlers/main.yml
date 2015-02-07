@@ -6,11 +6,15 @@
     state: absent
 
 - name: bootstrap users
-  command: docker run --rm --net="host" -v /root/web_vol:/config banking python3 -m banking.tools.add_user -c /config/config.yml -u {{item.name}} -p {{item.pass}}
+  command: docker run --rm --net="host" -v /banking/web_vol:/config banking python3 -m banking.tools.add_user -c /config/config.yml -u {{item.name}} -p {{item.pass}}
   no_log: True
   with_items: WEB_USERS
   
 - name: bootstrap transactions
-  command: docker run --rm --net="host" -v /root/web_vol:/config banking python3 -m banking.tools.add_trans -c /config/config.yml -t "{{item}}"
+  command: docker run --rm --net="host" -v /banking/web_vol:/config banking python3 -m banking.tools.add_trans -c /config/config.yml -t "{{item}}"
   no_log: True
   with_items: WEB_TRANSACTIONS
+
+
+- name: charlie flag
+  command: docker run --rm --net="host" -v /banking/web_vol:/config banking python3 -m banking.tools.flag -c /config/config.yml -f "{{ FLAG_WEB_DB }}" 

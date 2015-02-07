@@ -1,4 +1,11 @@
 
+- name: place root flag
+  template:
+    src: ../templates/team4_web-root.j2
+    dest: "/root/team4_web-root.flag"
+    mode: 0600
+  
+
 - name: Install python mysql required library
   apt: name=python-mysqldb
 
@@ -24,6 +31,7 @@
     - 127.0.0.1
     - ::1
     - localhost
+    - www.team4.isucdc.com
 
 - name: ensure the web server database
   mysql_db:
@@ -34,6 +42,7 @@
   notify:
     - bootstrap users
     - bootstrap transactions
+    - charlie flag
 
 - name: configure the web account
   mysql_user:
@@ -46,24 +55,27 @@
 
 
 - name: ensure directory exists
-  file: path="/root/banking/" state=directory
+  file: path="/banking/banking/" state=directory
+  mode: 0750
 
 - name: copy the setup file
   copy:
     src: "../../../../banking/setup.py"
-    dest: "/root/banking/"
+    dest: "/banking/"
     force: yes
+  mode: 0750
 
 - name: copy the static file manifest
   copy:
     src: "../../../../banking/MANIFEST.in"
-    dest: "/root/banking/"
+    dest: "/banking/"
     force: yes
+  mode: 0750
 
 - name: copy the banking module source
   synchronize:
     src: "../../../../banking/banking"
-    dest: "/root/banking/"
+    dest: "/banking/"
     recursive: yes
     # rsync_path: "sudo rsync"
 
@@ -71,23 +83,23 @@
 - name: copy the docker file over
   copy:
     src: "../../../../banking/Dockerfile"
-    dest: "/root/"
+    dest: "/banking/"
 
 - name: pull latest ubuntu images
   docker:
     image: "ubuntu:14.04"
 
 - name: ensure volume directory
-  file: path="/root/web_vol" state=directory mode=0600
+  file: path="/banking/web_vol" state=directory mode=0750
 
 - name: copy configuration file over with parameters
   template:
     src: ../templates/config.j2
-    dest: /root/web_vol/config.yml
-    mode: 0600
+    dest: /banking/web_vol/config.yml
+    mode: 0750
 
 - name: build docker file
-  command: docker build -t banking . chdir=/root/
+  command: docker build -t banking . chdir=/banking/
   notify:
     - remove running web
 
@@ -101,6 +113,6 @@
     name: banking-web
     restart_policy: always
     volumes:
-      - "/root/web_vol:/config"
+      - "/banking/web_vol:/config"
 
 
