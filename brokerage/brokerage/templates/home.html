@@ -1,15 +1,15 @@
 {% extends "base.html" %}
 {% block title %}Home{% endblock %}
 {% block content %}
-		<h2>Welcome, {{ user_info[0][1] }}!</h2>
+		<h2>Welcome, {{ user_info.name }}!</h2>
 	<div style="float:left; width:50%">
-		<p><em>Brokerage Balance: <span id="balance">{{ user_info[0][3] }}</span></em></p>
+		<p><em>Brokerage Balance: <span id="balance">{{ user_info.balance }}</span></em></p>
 
 		<h3>Stock Holdings</h3>
 		<table>
 			<tr><td><b><u> Stock Name </b></u></td><td><b><u> Amount Owned </b></u></td><td><b><u> Stock Symbol </b></u></td><td><b><u> Stock Price </b></u></td></tr>
 		{% for stock in stock_holdings %}
-			<tr><td>{{ stock[2] }}</td><td id="my_{{ stock[0] }}">{{ stock[3] }}</td><td>{{ stock[0] }}</td><td>{{ stock[1] }}</td></tr>
+			<tr><td>{{ stock[1].name }}</td><td id="my_{{ stock[1].symbol }}">{{ stock[0].ownings }}</td><td>{{ stock[1].symbol }}</td><td>{{ stock[1].price }}</td></tr>
 		{% endfor %}
 		</table>
 
@@ -38,7 +38,7 @@
 			<table>
 				<tr><td><b><u> Stock Name </u></b></td><td><b><u> Stock Price </u></b></td><td><b><u> Stock Symbol </u></b></td></tr>
 				{% for stock in stocks %}
-					<tr><td>{{ stock[3] }}</td><td id="{{ stock[1] }}">{{ stock[2] }}</td><td>{{ stock[1] }}</td></tr>
+					<tr><td>{{ stock.name }}</td><td id="{{ stock.symbol }}">{{ stock.price }}</td><td>{{ stock.symbol }}</td></tr>
 				{% endfor %}
 		</div>
 <script type="text/javascript">

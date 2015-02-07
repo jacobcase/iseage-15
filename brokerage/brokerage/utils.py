@@ -1,6 +1,6 @@
-from database import query_db
 from flask import session, Response, make_response
-from db import User, StockHolder, Stock
+from brokerage import signer
+from brokerage.db import User, StockHolder, Stock
 from itsdangerous import BadSignature
 
 class UserNotFoundError(Exception):
@@ -48,10 +48,3 @@ def get_db_user(user_name=None):
         raise UserNotFoundError("User not found in database")
     else:
         return db_user
-
-
-def isAdmin():
-	if 'name' not in session:
-		return False
-	result = query_db("SELECT admin FROM users WHERE username=?;", (session['name'],))
-	return result[0][0] == 1

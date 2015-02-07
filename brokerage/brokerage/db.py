@@ -1,6 +1,8 @@
 from flask.ext.sqlalchemy import SQLAlchemy
 from passlib.hash import sha256_crypt
 import os
+from brokerage import app, DB_PASS, DB_USER
+from datetime import datetime
 
 
 app.config['SECRET_KEY'] = "todo"
@@ -70,5 +72,7 @@ class Stock(DB.Model):
 		self.symbol = symbol
 
 	def update_price(self, price):
-		self.price = price	
+		self.price = price
+		
+DB.create_all()
 
